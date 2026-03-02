@@ -1,5 +1,4 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { ROLES } from "@/components/roles/roles";
 
@@ -37,15 +36,13 @@ export default function RoleSelect() {
             <p className="text-xs text-slate-400 text-center line-clamp-2">
               {role.description}
             </p>
-
-            {/* Hover overlay */}
             <div className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${role.color} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
           </button>
         ))}
       </div>
 
       <p className="mt-10 text-sm text-slate-400">
-        Mode démonstration — Cliquez sur un profil pour explorer son espace
+        Mode démonstration — Cliquez sur un profil pour explorer votre espace
       </p>
     </div>
   );
