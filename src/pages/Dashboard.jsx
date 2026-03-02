@@ -193,37 +193,40 @@ function ComptableDashboard({ staff, teachers }) {
         <StatCard title="Personnel administratif" value={staff.filter(s => s.status === "active").length} icon={Users} color="teal" />
         <StatCard title="Enseignants" value={teachers.filter(t => t.status === "active").length} icon={GraduationCap} color="green" />
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader><CardTitle>Répartition des contrats - Personnel</CardTitle></CardHeader>
-          <CardContent>
-            {["permanent", "contract", "part_time"].map(type => {
-              const count = staff.filter(s => s.contract_type === type).length;
-              const labels = { permanent: "CDI", contract: "CDD", part_time: "Temps partiel" };
-              return (
-                <div key={type} className="flex items-center justify-between py-2 border-b last:border-0">
-                  <span className="font-medium">{labels[type]}</span>
-                  <Badge>{count}</Badge>
-                </div>
-              );
-            })}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader><CardTitle>Répartition des contrats - Enseignants</CardTitle></CardHeader>
-          <CardContent>
-            {["permanent", "contract", "part_time"].map(type => {
-              const count = teachers.filter(t => t.contract_type === type).length;
-              const labels = { permanent: "CDI", contract: "CDD", part_time: "Temps partiel" };
-              return (
-                <div key={type} className="flex items-center justify-between py-2 border-b last:border-0">
-                  <span className="font-medium">{labels[type]}</span>
-                  <Badge>{count}</Badge>
-                </div>
-              );
-            })}
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 grid grid-cols-1 gap-6">
+          <Card>
+            <CardHeader><CardTitle>Répartition des contrats - Personnel</CardTitle></CardHeader>
+            <CardContent>
+              {["permanent", "contract", "part_time"].map(type => {
+                const count = staff.filter(s => s.contract_type === type).length;
+                const labels = { permanent: "CDI", contract: "CDD", part_time: "Temps partiel" };
+                return (
+                  <div key={type} className="flex items-center justify-between py-2 border-b last:border-0">
+                    <span className="font-medium">{labels[type]}</span>
+                    <Badge>{count}</Badge>
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader><CardTitle>Répartition des contrats - Enseignants</CardTitle></CardHeader>
+            <CardContent>
+              {["permanent", "contract", "part_time"].map(type => {
+                const count = teachers.filter(t => t.contract_type === type).length;
+                const labels = { permanent: "CDI", contract: "CDD", part_time: "Temps partiel" };
+                return (
+                  <div key={type} className="flex items-center justify-between py-2 border-b last:border-0">
+                    <span className="font-medium">{labels[type]}</span>
+                    <Badge>{count}</Badge>
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
+        </div>
+        <FinanceWidget />
       </div>
     </>
   );
