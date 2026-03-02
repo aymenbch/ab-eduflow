@@ -61,6 +61,8 @@ import Resources from './pages/Resources';
 import Attendance from './pages/Attendance';
 import Sanctions from './pages/Sanctions';
 import Messages from './pages/Messages';
+import Events from './pages/Events';
+import StudentDetail from './pages/StudentDetail';
 import __Layout from './Layout.jsx';
 
 
@@ -79,6 +81,8 @@ export const PAGES = {
     "Attendance": Attendance,
     "Sanctions": Sanctions,
     "Messages": Messages,
+    "Events": Events,
+    "StudentDetail": StudentDetail,
 }
 
 export const pagesConfig = {
