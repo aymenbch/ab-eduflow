@@ -63,6 +63,7 @@ import Sanctions from './pages/Sanctions';
 import Messages from './pages/Messages';
 import Events from './pages/Events';
 import StudentDetail from './pages/StudentDetail';
+import RoleSelect from './pages/RoleSelect';
 import __Layout from './Layout.jsx';
 
 
@@ -83,6 +84,7 @@ export const PAGES = {
     "Messages": Messages,
     "Events": Events,
     "StudentDetail": StudentDetail,
+    "RoleSelect": RoleSelect,
 }
 
 export const pagesConfig = {
