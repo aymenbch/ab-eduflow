@@ -23,6 +23,7 @@ import { fr } from "date-fns/locale";
 import { ROLES } from "@/components/roles/roles";
 import { createPageUrl } from "@/utils";
 import { Link } from "react-router-dom";
+import FinanceWidget from "@/components/dashboard/FinanceWidget";
 
 // Role-specific dashboard content
 function AdminDashboard({ students, teachers, classes, subjects, events, sanctions, messages }) {
