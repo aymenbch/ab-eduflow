@@ -47,50 +47,14 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
-import Dashboard from './pages/Dashboard';
-import Students from './pages/Students';
-import Teachers from './pages/Teachers';
-import Classes from './pages/Classes';
-import Subjects from './pages/Subjects';
-import Staff from './pages/Staff';
-import Schedule from './pages/Schedule';
-import Exams from './pages/Exams';
-import Grades from './pages/Grades';
-import Homework from './pages/Homework';
-import Resources from './pages/Resources';
-import Attendance from './pages/Attendance';
-import Sanctions from './pages/Sanctions';
-import Messages from './pages/Messages';
-import Events from './pages/Events';
-import StudentDetail from './pages/StudentDetail';
-import RoleSelect from './pages/RoleSelect';
-import Finance from './pages/Finance';
-import __Layout from './Layout.jsx';
+import Administration from './pages/Administration';
 
 
 export const PAGES = {
-    "Dashboard": Dashboard,
-    "Students": Students,
-    "Teachers": Teachers,
-    "Classes": Classes,
-    "Subjects": Subjects,
-    "Staff": Staff,
-    "Schedule": Schedule,
-    "Exams": Exams,
-    "Grades": Grades,
-    "Homework": Homework,
-    "Resources": Resources,
-    "Attendance": Attendance,
-    "Sanctions": Sanctions,
-    "Messages": Messages,
-    "Events": Events,
-    "StudentDetail": StudentDetail,
-    "RoleSelect": RoleSelect,
-    "Finance": Finance,
+    "Administration": Administration,
 }
 
 export const pagesConfig = {
-    mainPage: "Dashboard",
+    mainPage: "Administration",
     Pages: PAGES,
-    Layout: __Layout,
 };
