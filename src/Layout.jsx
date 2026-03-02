@@ -20,6 +20,7 @@ import {
   ChevronDown,
   LogOut,
   RefreshCw,
+  DollarSign,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -48,6 +49,7 @@ const ALL_NAVIGATION = [
   { name: "Sanctions", href: "Sanctions", icon: AlertTriangle },
   { name: "Messages", href: "Messages", icon: MessageSquare },
   { name: "Événements", href: "Events", icon: Calendar },
+  { name: "Finance & Contentieux", href: "Finance", icon: DollarSign },
 ];
 
 export default function Layout({ children, currentPageName }) {
