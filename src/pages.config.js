@@ -64,6 +64,7 @@ import Messages from './pages/Messages';
 import Events from './pages/Events';
 import StudentDetail from './pages/StudentDetail';
 import RoleSelect from './pages/RoleSelect';
+import Finance from './pages/Finance';
 import __Layout from './Layout.jsx';
 
 
@@ -85,6 +86,7 @@ export const PAGES = {
     "Events": Events,
     "StudentDetail": StudentDetail,
     "RoleSelect": RoleSelect,
+    "Finance": Finance,
 }
 
 export const pagesConfig = {
