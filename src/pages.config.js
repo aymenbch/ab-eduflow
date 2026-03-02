@@ -57,7 +57,6 @@ import Grades from './pages/Grades';
 import Homework from './pages/Homework';
 import Messages from './pages/Messages';
 import Resources from './pages/Resources';
-import RoleSelect from './pages/RoleSelect';
 import Sanctions from './pages/Sanctions';
 import Schedule from './pages/Schedule';
 import Staff from './pages/Staff';
@@ -80,7 +79,6 @@ export const PAGES = {
     "Homework": Homework,
     "Messages": Messages,
     "Resources": Resources,
-    "RoleSelect": RoleSelect,
     "Sanctions": Sanctions,
     "Schedule": Schedule,
     "Staff": Staff,
