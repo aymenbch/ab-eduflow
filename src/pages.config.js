@@ -53,6 +53,14 @@ import Teachers from './pages/Teachers';
 import Classes from './pages/Classes';
 import Subjects from './pages/Subjects';
 import Staff from './pages/Staff';
+import Schedule from './pages/Schedule';
+import Exams from './pages/Exams';
+import Grades from './pages/Grades';
+import Homework from './pages/Homework';
+import Resources from './pages/Resources';
+import Attendance from './pages/Attendance';
+import Sanctions from './pages/Sanctions';
+import Messages from './pages/Messages';
 import __Layout from './Layout.jsx';
 
 
@@ -63,6 +71,14 @@ export const PAGES = {
     "Classes": Classes,
     "Subjects": Subjects,
     "Staff": Staff,
+    "Schedule": Schedule,
+    "Exams": Exams,
+    "Grades": Grades,
+    "Homework": Homework,
+    "Resources": Resources,
+    "Attendance": Attendance,
+    "Sanctions": Sanctions,
+    "Messages": Messages,
 }
 
 export const pagesConfig = {
