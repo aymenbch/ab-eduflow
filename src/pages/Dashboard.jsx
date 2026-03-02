@@ -57,7 +57,10 @@ function AdminDashboard({ students, teachers, classes, subjects, events, sanctio
           </CardContent>
         </Card>
       </div>
-      <UpcomingEvents events={events} />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <UpcomingEvents events={events} />
+        <FinanceWidget />
+      </div>
     </>
   );
 }
