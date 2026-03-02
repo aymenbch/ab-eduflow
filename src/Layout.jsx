@@ -21,6 +21,7 @@ import {
   LogOut,
   RefreshCw,
   DollarSign,
+  ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -52,6 +53,10 @@ const ALL_NAVIGATION = [
   { name: "Finance & Contentieux", href: "Finance", icon: DollarSign },
 ];
 
+const ADMIN_NAV = [
+  { name: "Administration", href: "Administration", icon: ShieldCheck },
+];
+
 export default function Layout({ children, currentPageName }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentRole, setCurrentRole] = useState(null);
@@ -78,13 +83,15 @@ export default function Layout({ children, currentPageName }) {
     ? ALL_NAVIGATION.filter(item => roleConfig.pages.includes(item.href))
     : ALL_NAVIGATION;
 
+  // Only directeur_general sees the Administration page
+  const isAdmin = currentRole === "directeur_general";
+
   // Block access to unauthorized pages
   useEffect(() => {
     if (currentRole && roleConfig && currentPageName && currentPageName !== "RoleSelect") {
-      // Allow Grades page from Exams link
-      const effectivePage = currentPageName === "Grades" ? "Grades" : currentPageName;
       const allowedPages = [...roleConfig.pages, "Grades", "StudentDetail"];
-      if (!allowedPages.includes(effectivePage)) {
+      if (isAdmin) allowedPages.push("Administration");
+      if (!allowedPages.includes(currentPageName)) {
         window.location.href = createPageUrl("Dashboard");
       }
     }
@@ -174,6 +181,32 @@ export default function Layout({ children, currentPageName }) {
                   </Link>
                 );
               })}
+
+              {/* Admin section */}
+              {isAdmin && (
+                <>
+                  <div className="pt-3 pb-1">
+                    <p className="text-xs text-slate-400 uppercase tracking-wider px-4">Administration</p>
+                  </div>
+                  {ADMIN_NAV.map((item) => {
+                    const isActive = currentPath === item.href;
+                    return (
+                      <Link
+                        key={item.name}
+                        to={createPageUrl(item.href)}
+                        onClick={() => setSidebarOpen(false)}
+                        className={cn(
+                          "sidebar-item flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium",
+                          isActive ? "active" : "text-slate-600 hover:bg-slate-100"
+                        )}
+                      >
+                        <item.icon className="w-5 h-5" />
+                        {item.name}
+                      </Link>
+                    );
+                  })}
+                </>
+              )}
             </nav>
           </ScrollArea>
 
@@ -217,13 +250,12 @@ export default function Layout({ children, currentPageName }) {
               </Button>
               <div className="hidden md:block">
                 <h2 className="text-lg font-semibold text-slate-900">
-                  {ALL_NAVIGATION.find(n => n.href === currentPath)?.name || "Tableau de bord"}
+                  {[...ALL_NAVIGATION, ...ADMIN_NAV].find(n => n.href === currentPath)?.name || "Tableau de bord"}
                 </h2>
               </div>
             </div>
 
             <div className="flex items-center gap-3">
-              {/* Role badge in header on mobile */}
               {roleConfig && (
                 <div className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r ${roleConfig.color} text-white text-xs font-medium`}>
                   <span>{roleConfig.icon}</span>
