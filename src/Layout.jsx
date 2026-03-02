@@ -71,8 +71,12 @@ export default function Layout({ children, currentPageName }) {
   // If no role selected and not on RoleSelect page, redirect
   useEffect(() => {
     const role = localStorage.getItem("edugest_role");
-    if (!role && currentPageName !== "RoleSelect") {
-      window.location.href = createPageUrl("RoleSelect");
+    if (!role && currentPageName !== "RoleSelect" && currentPageName !== "roleselect") {
+      // Use navigate instead of hard redirect to avoid page-not-found loops
+      const url = createPageUrl("RoleSelect");
+      if (window.location.href !== url) {
+        window.location.replace(url);
+      }
     }
   }, [currentPageName]);
 

@@ -47,11 +47,47 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
+import Attendance from './pages/Attendance';
+import Classes from './pages/Classes';
+import Dashboard from './pages/Dashboard';
+import Events from './pages/Events';
+import Exams from './pages/Exams';
+import Finance from './pages/Finance';
+import Grades from './pages/Grades';
+import Homework from './pages/Homework';
+import Messages from './pages/Messages';
+import Resources from './pages/Resources';
+import RoleSelect from './pages/RoleSelect';
+import Sanctions from './pages/Sanctions';
+import Schedule from './pages/Schedule';
+import Staff from './pages/Staff';
+import StudentDetail from './pages/StudentDetail';
+import Students from './pages/Students';
+import Subjects from './pages/Subjects';
+import Teachers from './pages/Teachers';
 import Administration from './pages/Administration';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
+    "Attendance": Attendance,
+    "Classes": Classes,
+    "Dashboard": Dashboard,
+    "Events": Events,
+    "Exams": Exams,
+    "Finance": Finance,
+    "Grades": Grades,
+    "Homework": Homework,
+    "Messages": Messages,
+    "Resources": Resources,
+    "RoleSelect": RoleSelect,
+    "Sanctions": Sanctions,
+    "Schedule": Schedule,
+    "Staff": Staff,
+    "StudentDetail": StudentDetail,
+    "Students": Students,
+    "Subjects": Subjects,
+    "Teachers": Teachers,
     "Administration": Administration,
 }
 
