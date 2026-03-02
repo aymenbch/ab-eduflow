@@ -7,7 +7,7 @@ export const ROLES = {
     bgColor: "bg-slate-100",
     icon: "👑",
     description: "Accès complet à tous les modules",
-    pages: ["Dashboard", "Students", "Teachers", "Classes", "Subjects", "Staff", "Schedule", "Exams", "Grades", "Homework", "Resources", "Attendance", "Sanctions", "Messages", "Events"],
+    pages: ["Dashboard", "Students", "Teachers", "Classes", "Subjects", "Staff", "Schedule", "Exams", "Grades", "Homework", "Resources", "Attendance", "Sanctions", "Messages", "Events", "Finance"],
   },
   directeur_primaire: {
     label: "Directeur du Primaire",
@@ -16,7 +16,7 @@ export const ROLES = {
     bgColor: "bg-blue-100",
     icon: "🏫",
     description: "Gestion du cycle primaire",
-    pages: ["Dashboard", "Students", "Teachers", "Classes", "Subjects", "Schedule", "Exams", "Grades", "Attendance", "Sanctions", "Messages", "Events"],
+    pages: ["Dashboard", "Students", "Teachers", "Classes", "Subjects", "Schedule", "Exams", "Grades", "Attendance", "Sanctions", "Messages", "Events", "Finance"],
   },
   directeur_college: {
     label: "Directeur du Collège",
@@ -25,7 +25,7 @@ export const ROLES = {
     bgColor: "bg-indigo-100",
     icon: "🎓",
     description: "Gestion du cycle collège",
-    pages: ["Dashboard", "Students", "Teachers", "Classes", "Subjects", "Schedule", "Exams", "Grades", "Attendance", "Sanctions", "Messages", "Events"],
+    pages: ["Dashboard", "Students", "Teachers", "Classes", "Subjects", "Schedule", "Exams", "Grades", "Attendance", "Sanctions", "Messages", "Events", "Finance"],
   },
   directeur_lycee: {
     label: "Directeur du Lycée",
@@ -34,7 +34,7 @@ export const ROLES = {
     bgColor: "bg-violet-100",
     icon: "🏛️",
     description: "Gestion du cycle lycée",
-    pages: ["Dashboard", "Students", "Teachers", "Classes", "Subjects", "Schedule", "Exams", "Grades", "Attendance", "Sanctions", "Messages", "Events"],
+    pages: ["Dashboard", "Students", "Teachers", "Classes", "Subjects", "Schedule", "Exams", "Grades", "Attendance", "Sanctions", "Messages", "Events", "Finance"],
   },
   cpe: {
     label: "CPE",
@@ -70,7 +70,7 @@ export const ROLES = {
     bgColor: "bg-teal-100",
     icon: "💼",
     description: "Gestion RH et financière",
-    pages: ["Dashboard", "Staff", "Teachers", "Messages"],
+    pages: ["Dashboard", "Staff", "Teachers", "Messages", "Finance"],
   },
   eleve: {
     label: "Élève",
