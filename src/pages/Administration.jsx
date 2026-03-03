@@ -18,6 +18,7 @@ import {
 import { Users, Search, MoreVertical, Edit, Trash2, UserPlus, ShieldCheck, Ban, Mail } from "lucide-react";
 import { ROLES, PAGE_LABELS } from "@/components/roles/roles";
 import InviteUserModal from "@/components/admin/InviteUserModal";
+import SystemConfigSection from "@/components/admin/SystemConfigSection";
 
 const STATUS_COLORS = {
   active: "bg-green-100 text-green-800",
