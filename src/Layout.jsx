@@ -96,7 +96,7 @@ export default function Layout({ children, currentPageName }) {
   useEffect(() => {
     if (currentRole && roleConfig && currentPageName && currentPageName !== "RoleSelect") {
       const allowedPages = [...roleConfig.pages, "Grades", "StudentDetail"];
-      if (isAdmin) allowedPages.push("Administration");
+      if (isAdmin) allowedPages.push("Administration", "Analytics");
       if (!allowedPages.includes(currentPageName)) {
         window.location.href = createPageUrl("Dashboard");
       }
