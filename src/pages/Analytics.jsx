@@ -2,10 +2,10 @@ import React, { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import DirectionDashboard from "@/components/analytics/DirectionDashboard";
-import StudentAnalytics from "@/components/analytics/StudentAnalytics";
-import TeacherAnalytics from "@/components/analytics/TeacherAnalytics";
-import EarlyWarningSystem from "@/components/analytics/EarlyWarningSystem";
+import DirectionDashboard from "@/components/analytics/DirectionDashboard.jsx";
+import StudentAnalytics from "@/components/analytics/StudentAnalytics.jsx";
+import TeacherAnalytics from "@/components/analytics/TeacherAnalytics.jsx";
+import EarlyWarningSystem from "@/components/analytics/EarlyWarningSystem.jsx";
 import { BarChart2, Users, GraduationCap, AlertTriangle } from "lucide-react";
 
 export default function Analytics() {
