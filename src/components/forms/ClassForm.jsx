@@ -18,8 +18,7 @@ import {
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
-
-const LEVELS = ["6ème", "5ème", "4ème", "3ème", "2nde", "1ère", "Terminale"];
+import { getCurrentLevels } from "@/components/config/educationSystems";
 
 export default function ClassForm({ open, onClose, classData, onSave }) {
   const [formData, setFormData] = useState({
