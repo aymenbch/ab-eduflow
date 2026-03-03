@@ -110,7 +110,7 @@ export default function ClassForm({ open, onClose, classData, onSave }) {
                   <SelectValue placeholder="Sélectionner" />
                 </SelectTrigger>
                 <SelectContent>
-                  {LEVELS.map((level) => (
+                  {getCurrentLevels().map((level) => (
                     <SelectItem key={level} value={level}>
                       {level}
                     </SelectItem>
