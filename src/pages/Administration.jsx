@@ -99,6 +99,8 @@ export default function Administration() {
         actionIcon={UserPlus}
       />
 
+      <SystemConfigSection />
+
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4 mb-8">
         <Card>
