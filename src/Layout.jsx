@@ -55,6 +55,7 @@ const ALL_NAVIGATION = [
 ];
 
 const ADMIN_NAV = [
+  { name: "Analytics & BI", href: "Analytics", icon: BarChart2 },
   { name: "Administration", href: "Administration", icon: ShieldCheck },
 ];
 
