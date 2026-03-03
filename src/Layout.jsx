@@ -52,6 +52,7 @@ const ALL_NAVIGATION = [
   { name: "Messages", href: "Messages", icon: MessageSquare },
   { name: "Événements", href: "Events", icon: Calendar },
   { name: "Finance & Contentieux", href: "Finance", icon: DollarSign },
+  { name: "Bulletins Scolaires", href: "Bulletins", icon: FileText },
 ];
 
 const ADMIN_NAV = [

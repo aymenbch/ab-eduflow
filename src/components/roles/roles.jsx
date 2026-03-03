@@ -7,7 +7,7 @@ export const ROLES = {
     bgColor: "bg-slate-100",
     icon: "👑",
     description: "Accès complet à tous les modules",
-    pages: ["Dashboard", "Students", "Teachers", "Classes", "Subjects", "Staff", "Schedule", "Exams", "Grades", "Homework", "Resources", "Attendance", "Sanctions", "Messages", "Events", "Finance"],
+    pages: ["Dashboard", "Students", "Teachers", "Classes", "Subjects", "Staff", "Schedule", "Exams", "Grades", "Homework", "Resources", "Attendance", "Sanctions", "Messages", "Events", "Finance", "Bulletins"],
   },
   directeur_primaire: {
     label: "Directeur du Primaire",
@@ -16,7 +16,7 @@ export const ROLES = {
     bgColor: "bg-blue-100",
     icon: "🏫",
     description: "Gestion du cycle primaire",
-    pages: ["Dashboard", "Students", "Teachers", "Classes", "Subjects", "Schedule", "Exams", "Grades", "Attendance", "Sanctions", "Messages", "Events", "Finance"],
+    pages: ["Dashboard", "Students", "Teachers", "Classes", "Subjects", "Schedule", "Exams", "Grades", "Attendance", "Sanctions", "Messages", "Events", "Finance", "Bulletins"],
   },
   directeur_college: {
     label: "Directeur du Collège",
@@ -25,7 +25,7 @@ export const ROLES = {
     bgColor: "bg-indigo-100",
     icon: "🎓",
     description: "Gestion du cycle collège",
-    pages: ["Dashboard", "Students", "Teachers", "Classes", "Subjects", "Schedule", "Exams", "Grades", "Attendance", "Sanctions", "Messages", "Events", "Finance"],
+    pages: ["Dashboard", "Students", "Teachers", "Classes", "Subjects", "Schedule", "Exams", "Grades", "Attendance", "Sanctions", "Messages", "Events", "Finance", "Bulletins"],
   },
   directeur_lycee: {
     label: "Directeur du Lycée",
@@ -34,7 +34,7 @@ export const ROLES = {
     bgColor: "bg-violet-100",
     icon: "🏛️",
     description: "Gestion du cycle lycée",
-    pages: ["Dashboard", "Students", "Teachers", "Classes", "Subjects", "Schedule", "Exams", "Grades", "Attendance", "Sanctions", "Messages", "Events", "Finance"],
+    pages: ["Dashboard", "Students", "Teachers", "Classes", "Subjects", "Schedule", "Exams", "Grades", "Attendance", "Sanctions", "Messages", "Events", "Finance", "Bulletins"],
   },
   cpe: {
     label: "CPE",
