@@ -67,6 +67,7 @@ import Students from './pages/Students';
 import Subjects from './pages/Subjects';
 import Teachers from './pages/Teachers';
 import Analytics from './pages/Analytics';
+import Bulletins from './pages/Bulletins';
 import __Layout from './Layout.jsx';
 
 
@@ -91,6 +92,7 @@ export const PAGES = {
     "Subjects": Subjects,
     "Teachers": Teachers,
     "Analytics": Analytics,
+    "Bulletins": Bulletins,
 }
 
 export const pagesConfig = {
