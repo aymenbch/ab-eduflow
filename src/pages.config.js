@@ -58,6 +58,7 @@ import Grades from './pages/Grades';
 import Homework from './pages/Homework';
 import Messages from './pages/Messages';
 import Resources from './pages/Resources';
+import RoleSelect from './pages/RoleSelect';
 import Sanctions from './pages/Sanctions';
 import Schedule from './pages/Schedule';
 import Staff from './pages/Staff';
@@ -65,7 +66,7 @@ import StudentDetail from './pages/StudentDetail';
 import Students from './pages/Students';
 import Subjects from './pages/Subjects';
 import Teachers from './pages/Teachers';
-import RoleSelect from './pages/RoleSelect';
+import Analytics from './pages/Analytics';
 import __Layout from './Layout.jsx';
 
 
@@ -81,6 +82,7 @@ export const PAGES = {
     "Homework": Homework,
     "Messages": Messages,
     "Resources": Resources,
+    "RoleSelect": RoleSelect,
     "Sanctions": Sanctions,
     "Schedule": Schedule,
     "Staff": Staff,
@@ -88,7 +90,7 @@ export const PAGES = {
     "Students": Students,
     "Subjects": Subjects,
     "Teachers": Teachers,
-    "RoleSelect": RoleSelect,
+    "Analytics": Analytics,
 }
 
 export const pagesConfig = {
