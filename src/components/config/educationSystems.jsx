@@ -56,6 +56,26 @@ export const EDUCATION_SYSTEMS = {
     ],
     allLevels: ["1re année", "2e année", "3e année", "4e année", "5e année", "6e année", "Sec 1", "Sec 2", "Sec 3", "Sec 4", "Sec 5"],
   },
+  ib: {
+    label: "Baccalauréat International (IB)",
+    flag: "🌍",
+    description: "Programme IB — PYP, MYP, DP",
+    cycles: [
+      {
+        name: "PYP (Primary Years Programme)",
+        levels: ["PYP 1", "PYP 2", "PYP 3", "PYP 4", "PYP 5", "PYP 6"],
+      },
+      {
+        name: "MYP (Middle Years Programme)",
+        levels: ["MYP 1", "MYP 2", "MYP 3", "MYP 4", "MYP 5"],
+      },
+      {
+        name: "DP (Diploma Programme)",
+        levels: ["DP 1", "DP 2"],
+      },
+    ],
+    allLevels: ["PYP 1", "PYP 2", "PYP 3", "PYP 4", "PYP 5", "PYP 6", "MYP 1", "MYP 2", "MYP 3", "MYP 4", "MYP 5", "DP 1", "DP 2"],
+  },
 };
 
 export const DEFAULT_SYSTEM = "francais";
