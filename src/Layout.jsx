@@ -25,6 +25,7 @@ import {
   BarChart2,
   CalendarDays,
   Smartphone,
+  Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
