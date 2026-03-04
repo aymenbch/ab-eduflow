@@ -21,6 +21,7 @@ import TeacherAnalytics from "@/components/analytics/TeacherAnalytics";
 import TeacherPerformanceView from "@/components/analytics/TeacherPerformanceView";
 import DirectionDashboardStrategic from "@/components/dashboard/DirectionDashboardStrategic";
 import PredictiveAI from "@/components/analytics/PredictiveAI";
+import PsychoPedagogicalProfile from "@/components/analytics/PsychoPedagogicalProfile";
 
 const currentRole = () => localStorage.getItem("edugest_role");
 
