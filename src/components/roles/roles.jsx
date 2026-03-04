@@ -52,7 +52,7 @@ export const ROLES = {
     bgColor: "bg-green-100",
     icon: "📚",
     description: "Cours, notes, devoirs et ressources",
-    pages: ["Dashboard", "Students", "Classes", "Schedule", "Exams", "Grades", "Homework", "Resources", "Attendance", "Messages", "MobileSaisie"],
+    pages: ["Dashboard", "Students", "Classes", "Schedule", "Exams", "Grades", "Homework", "Resources", "Attendance", "Messages", "MobileSaisie", "StudentDashboard360"],
   },
   secretaire: {
     label: "Secrétaire",
