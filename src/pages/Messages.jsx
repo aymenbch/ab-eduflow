@@ -21,7 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Send, Mail, MailOpen, Loader2, Trash2, Search } from "lucide-react";
+import { Send, Mail, MailOpen, Loader2, Trash2, Search, Reply } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import {
