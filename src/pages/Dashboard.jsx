@@ -280,7 +280,7 @@ export default function Dashboard() {
       return <AdminDashboard students={students} teachers={teachers} classes={classes} subjects={subjects} events={events} sanctions={sanctions} messages={messages} />;
     }
     if (currentRole === "enseignant") {
-      return <TeacherDashboard classes={classes} homework={homework} messages={messages} students={students} grades={grades} exams={exams} subjects={subjects} sanctions={sanctions} attendance={attendance} />;
+      return <TeacherDashboard classes={classes} homework={homework} messages={messages} />;
     }
     if (currentRole === "cpe") {
       return <CPEDashboard students={students} sanctions={sanctions} messages={messages} />;
