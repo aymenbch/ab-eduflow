@@ -608,6 +608,11 @@ export default function Pilotage() {
               <BarChart2 className="w-4 h-4" /> Vue globale
             </TabsTrigger>
           )}
+          {tabs.includes("strategique") && (
+            <TabsTrigger value="strategique" className="flex items-center gap-2">
+              <Target className="w-4 h-4" /> KPIs Stratégiques
+            </TabsTrigger>
+          )}
           {tabs.includes("performance") && (
             <TabsTrigger value="performance" className="flex items-center gap-2">
               <BarChart2 className="w-4 h-4" /> Performance classes
