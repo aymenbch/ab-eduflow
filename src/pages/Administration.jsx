@@ -18,7 +18,7 @@ import {
 import {
   Users, Search, MoreVertical, Edit, Trash2, UserPlus,
   ShieldCheck, Ban, Mail, Lock, Settings, CheckCircle2,
-  Clock, XCircle, LayoutGrid, List, Filter
+  Clock, XCircle, LayoutGrid, List, Filter, Send
 } from "lucide-react";
 import { ROLES, PAGE_LABELS } from "@/components/roles/roles";
 import InviteUserModal from "@/components/admin/InviteUserModal";
