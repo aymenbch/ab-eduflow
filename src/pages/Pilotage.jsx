@@ -19,6 +19,7 @@ import {
 import EarlyWarningSystem from "@/components/analytics/EarlyWarningSystem";
 import TeacherAnalytics from "@/components/analytics/TeacherAnalytics";
 import TeacherPerformanceView from "@/components/analytics/TeacherPerformanceView";
+import DirectionDashboardStrategic from "@/components/dashboard/DirectionDashboardStrategic";
 
 const currentRole = () => localStorage.getItem("edugest_role");
 
