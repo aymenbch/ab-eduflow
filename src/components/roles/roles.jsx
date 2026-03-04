@@ -1,5 +1,14 @@
 // Role definitions with permissions and navigation
 export const ROLES = {
+  admin_systeme: {
+    label: "Administrateur Système",
+    color: "from-red-600 to-rose-800",
+    textColor: "text-red-800",
+    bgColor: "bg-red-100",
+    icon: "🔐",
+    description: "Accès total — Gestion des utilisateurs, rôles et modules",
+    pages: ["Dashboard", "Students", "Teachers", "Classes", "Subjects", "Staff", "Schedule", "Exams", "Grades", "Homework", "Resources", "Attendance", "Sanctions", "Messages", "Events", "Finance", "Bulletins", "SchoolYearManager", "MobileSaisie", "Pilotage", "Administration"],
+  },
   directeur_general: {
     label: "Directeur Général",
     color: "from-slate-700 to-slate-900",
