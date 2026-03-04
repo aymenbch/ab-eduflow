@@ -18,7 +18,7 @@ import {
 import {
   Users, Search, MoreVertical, Edit, Trash2, UserPlus,
   ShieldCheck, Ban, Mail, Lock, Settings, CheckCircle2,
-  Clock, XCircle, LayoutGrid, List, Send, Loader2
+  Clock, XCircle, LayoutGrid, List, Filter, Send
 } from "lucide-react";
 import { ROLES, PAGE_LABELS } from "@/components/roles/roles";
 import InviteUserModal from "@/components/admin/InviteUserModal";
@@ -52,7 +52,7 @@ function AccessDenied() {
 }
 
 // ─── User Card (grid view) ─────────────────────────────────────────────────────
-function UserCard({ profile, onEdit, onToggleSuspend, onDelete }) {
+function UserCard({ profile, onEdit, onToggleSuspend, onDelete, onResendInvite, resendingId }) {
   const role = ROLES[profile.edugest_role];
   const pages = profile.use_custom_pages ? (profile.custom_pages || []) : (role?.pages || []);
   const StatusIcon = STATUS_ICONS[profile.status] || CheckCircle2;
@@ -236,6 +236,12 @@ export default function Administration() {
     const newStatus = profile.status === "suspended" ? "active" : "suspended";
     await base44.entities.UserProfile.update(profile.id, { status: newStatus });
     queryClient.invalidateQueries({ queryKey: ["user_profiles"] });
+  };
+
+  const handleResendInvite = async (profile) => {
+    setResendingId(profile.id);
+    await base44.users.inviteUser(profile.email, "user");
+    setResendingId(null);
   };
 
   const filtered = profiles.filter(p => {
