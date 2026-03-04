@@ -15,7 +15,7 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Users, Search, MoreVertical, Edit, Trash2, UserPlus, ShieldCheck, Ban, Mail } from "lucide-react";
+import { Users, Search, MoreVertical, Edit, Trash2, UserPlus, ShieldCheck, Ban, Mail, Lock } from "lucide-react";
 import { ROLES, PAGE_LABELS } from "@/components/roles/roles";
 import InviteUserModal from "@/components/admin/InviteUserModal";
 import SystemConfigSection from "@/components/admin/SystemConfigSection";
@@ -32,7 +32,25 @@ const STATUS_LABELS = {
   suspended: "Suspendu",
 };
 
+// ─── Access Guard ─────────────────────────────────────────────────────────────
+function AccessDenied() {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
+      <div className="w-20 h-20 rounded-full bg-red-100 flex items-center justify-center mb-4">
+        <Lock className="w-10 h-10 text-red-500" />
+      </div>
+      <h2 className="text-2xl font-bold text-slate-800 mb-2">Accès restreint</h2>
+      <p className="text-slate-500 max-w-sm">
+        Cette page est réservée à l'<strong>Administrateur Système</strong>.<br />
+        Veuillez contacter votre administrateur pour obtenir l'accès.
+      </p>
+    </div>
+  );
+}
+
 export default function Administration() {
+  const currentRole = localStorage.getItem("edugest_role");
+  if (currentRole !== "admin_systeme") return <AccessDenied />;
   const [modalOpen, setModalOpen] = useState(false);
   const [editProfile, setEditProfile] = useState(null);
   const [deleteProfile, setDeleteProfile] = useState(null);
