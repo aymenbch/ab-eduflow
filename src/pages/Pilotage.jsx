@@ -637,6 +637,11 @@ export default function Pilotage() {
               <AlertTriangle className="w-4 h-4" /> Alertes
             </TabsTrigger>
           )}
+          {tabs.includes("predictive") && (
+            <TabsTrigger value="predictive" className="flex items-center gap-2">
+              <BrainCircuit className="w-4 h-4" /> IA Prédictive
+            </TabsTrigger>
+          )}
         </TabsList>
 
         {/* Performance classes (enseignant) */}
