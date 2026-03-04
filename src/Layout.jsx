@@ -296,10 +296,21 @@ export default function Layout({ children, currentPageName }) {
           </div>
         </header>
 
-        <main className="p-4 lg:p-8">
+        <main className="p-4 lg:p-8 pb-24 lg:pb-8">
           {children}
         </main>
       </div>
+
+      {/* Mobile Bottom Navigation */}
+      {currentRole && (
+        <>
+          <MobileBottomNav
+            currentRole={currentRole}
+            onMoreClick={() => setSidebarOpen(true)}
+          />
+          {/* Full menu overlay triggered by "Plus" */}
+        </>
+      )}
 
       {/* AI Chatbot - visible for all logged-in roles */}
       {currentRole && <AIChatbot />}
