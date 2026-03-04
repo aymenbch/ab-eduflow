@@ -71,233 +71,40 @@ function AdminDashboard({ students, teachers, classes, subjects, events, sanctio
   );
 }
 
-function TeacherAnalyticsKPIs({ classes, students, grades, exams, subjects, sanctions, attendance }) {
-  const stats = useMemo(() => {
-    // Moyenne par classe
-    const byClass = classes.map(cls => {
-      const classStudentIds = students.filter(s => s.class_id === cls.id).map(s => s.id);
-      const classExamIds = exams.filter(e => e.class_id === cls.id).map(e => e.id);
-      const classGrades = grades.filter(g => classStudentIds.includes(g.student_id) && classExamIds.includes(g.exam_id) && !g.absent && g.score != null);
-      const avg = classGrades.length ? classGrades.reduce((a, b) => a + b.score, 0) / classGrades.length : null;
-      const successRate = classGrades.length ? (classGrades.filter(g => g.score >= 10).length / classGrades.length) * 100 : null;
-      // Dispersion (écart-type)
-      let dispersion = null;
-      if (classGrades.length > 1 && avg !== null) {
-        const variance = classGrades.reduce((acc, g) => acc + Math.pow(g.score - avg, 2), 0) / classGrades.length;
-        dispersion = Math.sqrt(variance);
-      }
-      return { name: cls.name, avg: avg ? parseFloat(avg.toFixed(1)) : null, successRate: successRate ? parseFloat(successRate.toFixed(0)) : null, dispersion: dispersion ? parseFloat(dispersion.toFixed(1)) : null, count: classGrades.length };
-    }).filter(c => c.count > 0);
-
-    // Taux de réussite par matière
-    const bySubject = subjects.map(sub => {
-      const subExamIds = exams.filter(e => e.subject_id === sub.id).map(e => e.id);
-      const subGrades = grades.filter(g => subExamIds.includes(g.exam_id) && !g.absent && g.score != null);
-      const successRate = subGrades.length ? parseFloat(((subGrades.filter(g => g.score >= 10).length / subGrades.length) * 100).toFixed(0)) : null;
-      const avg = subGrades.length ? parseFloat((subGrades.reduce((a, b) => a + b.score, 0) / subGrades.length).toFixed(1)) : null;
-      return { name: sub.name.slice(0, 12), successRate, avg, count: subGrades.length };
-    }).filter(s => s.count > 0);
-
-    // Élèves à risque (moyenne < 10 ou absences > 20%)
-    const atRiskStudents = students.filter(s => s.status === "active").filter(student => {
-      const sg = grades.filter(g => g.student_id === student.id && !g.absent && g.score != null);
-      const avg = sg.length ? sg.reduce((a, b) => a + b.score, 0) / sg.length : null;
-      const att = attendance.filter(a => a.student_id === student.id);
-      const absRate = att.length ? (att.filter(a => a.status === "absent").length / att.length) * 100 : 0;
-      return (avg !== null && avg < 10) || absRate > 20;
-    });
-
-    // Analyse biais notation : écart moyen entre les classes
-    const avgs = byClass.map(c => c.avg).filter(Boolean);
-    const globalAvg = avgs.length ? avgs.reduce((a, b) => a + b, 0) / avgs.length : null;
-    const maxEcart = avgs.length > 1 ? Math.max(...avgs) - Math.min(...avgs) : null;
-
-    return { byClass, bySubject, atRiskStudents, globalAvg, maxEcart };
-  }, [classes, students, grades, exams, subjects, sanctions, attendance]);
-
-  return (
-    <div className="space-y-6">
-      {/* KPI row */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-        <Card className="border-l-4 border-l-indigo-500 bg-indigo-50">
-          <CardContent className="p-4">
-            <p className="text-xs text-indigo-600 font-medium uppercase tracking-wide">Classes analysées</p>
-            <p className="text-3xl font-bold text-indigo-700 mt-1">{stats.byClass.length}</p>
-          </CardContent>
-        </Card>
-        <Card className="border-l-4 border-l-red-400 bg-red-50">
-          <CardContent className="p-4">
-            <p className="text-xs text-red-600 font-medium uppercase tracking-wide">Élèves à risque</p>
-            <p className="text-3xl font-bold text-red-700 mt-1">{stats.atRiskStudents.length}</p>
-            <p className="text-xs text-red-400 mt-0.5">Détectés automatiquement</p>
-          </CardContent>
-        </Card>
-        <Card className="border-l-4 border-l-amber-400 bg-amber-50">
-          <CardContent className="p-4">
-            <p className="text-xs text-amber-600 font-medium uppercase tracking-wide">Écart inter-classes</p>
-            <p className="text-3xl font-bold text-amber-700 mt-1">{stats.maxEcart !== null ? `${stats.maxEcart.toFixed(1)} pts` : "—"}</p>
-            <p className="text-xs text-amber-400 mt-0.5">Analyse biais notation</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Moyenne + Dispersion par classe */}
-      {stats.byClass.length > 0 && (
-        <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><BarChart2 className="w-4 h-4 text-indigo-500" />Moyenne & Dispersion par classe</CardTitle></CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={stats.byClass}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                <YAxis domain={[0, 20]} tick={{ fontSize: 11 }} />
-                <Tooltip formatter={(v, n) => [n === "avg" ? `${v}/20` : `${v} pts`, n === "avg" ? "Moyenne" : "Écart-type"]} />
-                <Bar dataKey="avg" fill="#6366f1" radius={[4, 4, 0, 0]} name="Moyenne">
-                  {stats.byClass.map((c, i) => (
-                    <Cell key={i} fill={c.avg >= 12 ? "#22c55e" : c.avg >= 10 ? "#6366f1" : "#ef4444"} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-            <div className="mt-3 space-y-1">
-              {stats.byClass.map(c => (
-                <div key={c.name} className="flex items-center justify-between text-xs px-1">
-                  <span className="font-medium">{c.name}</span>
-                  <div className="flex gap-4 text-slate-500">
-                    <span>Moy: <strong className="text-slate-700">{c.avg ?? "—"}/20</strong></span>
-                    <span>Réussite: <strong className="text-slate-700">{c.successRate ?? "—"}%</strong></span>
-                    <span>Écart-type: <strong className="text-slate-700">{c.dispersion ?? "—"}</strong></span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Taux de réussite par matière */}
-      {stats.bySubject.length > 0 && (
-        <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><TrendingUp className="w-4 h-4 text-green-500" />Taux de réussite par matière</CardTitle></CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={180}>
-              <BarChart data={stats.bySubject} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" domain={[0, 100]} unit="%" tick={{ fontSize: 11 }} />
-                <YAxis dataKey="name" type="category" width={90} tick={{ fontSize: 11 }} />
-                <Tooltip formatter={(v) => [`${v}%`, "Taux de réussite"]} />
-                <Bar dataKey="successRate" radius={[0, 4, 4, 0]}>
-                  {stats.bySubject.map((s, i) => (
-                    <Cell key={i} fill={s.successRate >= 70 ? "#22c55e" : s.successRate >= 50 ? "#f59e0b" : "#ef4444"} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Élèves à risque */}
-      <Card>
-        <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-red-500" />Élèves à risque détectés automatiquement</CardTitle></CardHeader>
-        <CardContent>
-          {stats.atRiskStudents.length === 0 ? (
-            <p className="text-center text-slate-400 py-6">Aucun élève à risque détecté 🎉</p>
-          ) : (
-            <div className="space-y-2 max-h-56 overflow-y-auto">
-              {stats.atRiskStudents.map(s => {
-                const sg = grades.filter(g => g.student_id === s.id && !g.absent && g.score != null);
-                const avg = sg.length ? (sg.reduce((a, b) => a + b.score, 0) / sg.length).toFixed(1) : null;
-                const cls = classes.find(c => c.id === s.class_id);
-                return (
-                  <div key={s.id} className="flex items-center justify-between p-2 rounded-lg bg-red-50 border border-red-100">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-full bg-red-200 flex items-center justify-center text-xs font-bold text-red-700">
-                        {s.first_name?.[0]}{s.last_name?.[0]}
-                      </div>
-                      <div>
-                        <p className="text-xs font-semibold">{s.first_name} {s.last_name}</p>
-                        {cls && <p className="text-xs text-slate-400">{cls.name}</p>}
-                      </div>
-                    </div>
-                    <Badge className="bg-red-100 text-red-700 text-xs">Moy: {avg ?? "—"}/20</Badge>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {stats.byClass.length === 0 && stats.bySubject.length === 0 && (
-        <div className="text-center py-12 text-slate-400">
-          <BarChart2 className="w-10 h-10 mx-auto mb-2 opacity-30" />
-          <p>Aucune donnée disponible — ajoutez des examens et des notes</p>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function TeacherDashboard({ classes, homework, messages, students, grades, exams, subjects, sanctions, attendance }) {
+function TeacherDashboard({ classes, homework, messages }) {
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <StatCard title="Mes classes" value={classes.length} icon={School} color="green" />
         <StatCard title="Devoirs assignés" value={homework.length} icon={FileText} color="blue" />
         <StatCard title="Messages non lus" value={messages.filter(m => !m.read).length} icon={MessageSquare} color="orange" />
       </div>
-
-      <Tabs defaultValue="activite">
-        <TabsList className="grid grid-cols-3 w-full mb-4">
-          <TabsTrigger value="activite" className="flex items-center gap-2">
-            <Activity className="w-4 h-4" /> Activité
-          </TabsTrigger>
-          <TabsTrigger value="analytics" className="flex items-center gap-2">
-            <BarChart2 className="w-4 h-4" /> Performance classes
-          </TabsTrigger>
-          <TabsTrigger value="alertes" className="flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4" /> Alertes élèves
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="activite">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader><CardTitle className="flex items-center gap-2"><FileText className="w-5 h-5" />Derniers devoirs</CardTitle></CardHeader>
-              <CardContent>
-                {homework.slice(0, 5).map(hw => (
-                  <div key={hw.id} className="flex items-center justify-between py-2 border-b last:border-0">
-                    <span className="font-medium text-sm">{hw.title}</span>
-                    <Badge variant="outline">{hw.due_date}</Badge>
-                  </div>
-                ))}
-                {homework.length === 0 && <p className="text-slate-500 text-center py-4">Aucun devoir</p>}
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader><CardTitle className="flex items-center gap-2"><MessageSquare className="w-5 h-5" />Messages récents</CardTitle></CardHeader>
-              <CardContent>
-                {messages.slice(0, 5).map(m => (
-                  <div key={m.id} className={`flex items-center justify-between py-2 border-b last:border-0 ${!m.read ? 'font-semibold' : ''}`}>
-                    <span className="text-sm truncate">{m.subject}</span>
-                    <span className="text-xs text-slate-400 ml-2 flex-shrink-0">{m.sender_name}</span>
-                  </div>
-                ))}
-                {messages.length === 0 && <p className="text-slate-500 text-center py-4">Aucun message</p>}
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="analytics">
-          <TeacherAnalyticsKPIs classes={classes} students={students} grades={grades} exams={exams} subjects={subjects} sanctions={sanctions} attendance={attendance} />
-        </TabsContent>
-
-        <TabsContent value="alertes">
-          <TeacherAnalyticsKPIs classes={classes} students={students} grades={grades} exams={exams} subjects={subjects} sanctions={sanctions} attendance={attendance} />
-        </TabsContent>
-      </Tabs>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader><CardTitle className="flex items-center gap-2"><FileText className="w-5 h-5" />Derniers devoirs</CardTitle></CardHeader>
+          <CardContent>
+            {homework.slice(0, 5).map(hw => (
+              <div key={hw.id} className="flex items-center justify-between py-2 border-b last:border-0">
+                <span className="font-medium text-sm">{hw.title}</span>
+                <Badge variant="outline">{hw.due_date}</Badge>
+              </div>
+            ))}
+            {homework.length === 0 && <p className="text-slate-500 text-center py-4">Aucun devoir</p>}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader><CardTitle className="flex items-center gap-2"><MessageSquare className="w-5 h-5" />Messages récents</CardTitle></CardHeader>
+          <CardContent>
+            {messages.slice(0, 5).map(m => (
+              <div key={m.id} className={`flex items-center justify-between py-2 border-b last:border-0 ${!m.read ? 'font-semibold' : ''}`}>
+                <span className="text-sm truncate">{m.subject}</span>
+                <span className="text-xs text-slate-400 ml-2 flex-shrink-0">{m.sender_name}</span>
+              </div>
+            ))}
+            {messages.length === 0 && <p className="text-slate-500 text-center py-4">Aucun message</p>}
+          </CardContent>
+        </Card>
+      </div>
     </>
   );
 }
