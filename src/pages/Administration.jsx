@@ -479,13 +479,15 @@ export default function Administration() {
                   </thead>
                   <tbody>
                     {filtered.map(profile => (
-                      <UserRow
-                        key={profile.id}
-                        profile={profile}
-                        onEdit={handleEdit}
-                        onToggleSuspend={handleToggleSuspend}
-                        onDelete={setDeleteProfile}
-                      />
+                     <UserRow
+                       key={profile.id}
+                       profile={profile}
+                       onEdit={handleEdit}
+                       onToggleSuspend={handleToggleSuspend}
+                       onDelete={setDeleteProfile}
+                       onResendInvite={handleResendInvite}
+                       resending={resendingId === profile.id}
+                     />
                     ))}
                   </tbody>
                 </table>
