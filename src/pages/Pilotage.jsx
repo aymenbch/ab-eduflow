@@ -643,6 +643,21 @@ export default function Pilotage() {
           </TabsContent>
         )}
 
+        {/* KPIs Stratégiques Direction */}
+        {tabs.includes("strategique") && (
+          <TabsContent value="strategique" className="mt-4">
+            <DirectionDashboardStrategic
+              students={students}
+              teachers={[]}
+              classes={classes}
+              subjects={subjects}
+              events={[]}
+              sanctions={sanctions}
+              messages={[]}
+            />
+          </TabsContent>
+        )}
+
         {/* Vue globale */}
         {tabs.includes("vue_globale") && (
           <TabsContent value="vue_globale" className="mt-4 space-y-4">
