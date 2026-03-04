@@ -1,4 +1,17 @@
 import React, { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
+import StatCard from "@/components/ui/StatCard";
+import {
+  Users, GraduationCap, School, BookOpen, Calendar, AlertTriangle,
+  MessageSquare, TrendingUp, FileText,
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+import { ROLES } from "@/components/roles/roles";
+import FinanceWidget from "@/components/dashboard/FinanceWidget";
 
 // Role-specific dashboard content
 function AdminDashboard({ students, teachers, classes, subjects, events, sanctions, messages }) {
