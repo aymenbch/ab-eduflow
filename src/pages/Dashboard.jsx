@@ -12,6 +12,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { ROLES } from "@/components/roles/roles";
 import FinanceWidget from "@/components/dashboard/FinanceWidget";
+import DirectionDashboardStrategic from "@/components/dashboard/DirectionDashboardStrategic";
 
 // Role-specific dashboard content
 function AdminDashboard({ students, teachers, classes, subjects, events, sanctions, messages }) {
