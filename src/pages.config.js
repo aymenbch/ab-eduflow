@@ -73,6 +73,7 @@ import StudentDetail from './pages/StudentDetail';
 import Students from './pages/Students';
 import Subjects from './pages/Subjects';
 import Teachers from './pages/Teachers';
+import ProjectsScrum from './pages/ProjectsScrum';
 import __Layout from './Layout.jsx';
 
 
@@ -103,6 +104,7 @@ export const PAGES = {
     "Students": Students,
     "Subjects": Subjects,
     "Teachers": Teachers,
+    "ProjectsScrum": ProjectsScrum,
 }
 
 export const pagesConfig = {

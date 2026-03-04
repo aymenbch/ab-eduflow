@@ -63,6 +63,7 @@ const ALL_NAVIGATION = [
   { name: "Saisie Rapide Mobile", href: "MobileSaisie", icon: Smartphone },
   { name: "Espace Parents Premium", href: "EspaceParent", icon: Star },
   { name: "Pilotage & Performance", href: "Pilotage", icon: TrendingUp },
+  { name: "Projets Agile / Scrum", href: "ProjectsScrum", icon: BarChart2 },
 ];
 
 const ADMIN_NAV = [
