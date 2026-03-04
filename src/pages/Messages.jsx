@@ -42,6 +42,8 @@ export default function Messages() {
   const [messageToDelete, setMessageToDelete] = useState(null);
   const [search, setSearch] = useState("");
   const [saving, setSaving] = useState(false);
+  const [replyContent, setReplyContent] = useState("");
+  const [replying, setReplying] = useState(false);
   const [formData, setFormData] = useState({
     sender_name: "",
     recipient_type: "parent",
