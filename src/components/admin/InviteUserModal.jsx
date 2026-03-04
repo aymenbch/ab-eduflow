@@ -63,12 +63,7 @@ export default function InviteUserModal({ open, onClose, onSaved, profile }) {
         await base44.entities.UserProfile.update(profile.id, data);
       } else {
         await base44.entities.UserProfile.create(data);
-        // Send invite
-        try {
-          await base44.users.inviteUser(form.email, "user");
-        } catch (inviteErr) {
-          // Invitation may already exist, continue
-        }
+        await base44.users.inviteUser(form.email, "user");
       }
       onSaved();
     } catch (err) {
