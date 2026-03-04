@@ -98,15 +98,13 @@ export default function Layout({ children, currentPageName }) {
     ? ALL_NAVIGATION.filter(item => roleConfig.pages.includes(item.href))
     : ALL_NAVIGATION;
 
-  // Only directeur_general sees the Administration page
-  const isAdmin = currentRole === "directeur_general";
-
+  // Only admin_systeme sees the Administration page
+  const isAdmin = currentRole === "admin_systeme";
 
   // Block access to unauthorized pages
   useEffect(() => {
     if (currentRole && roleConfig && currentPageName && currentPageName !== "RoleSelect") {
       const allowedPages = [...roleConfig.pages, "Grades", "StudentDetail"];
-      if (isAdmin) allowedPages.push("Administration", "Analytics");
       if (!allowedPages.includes(currentPageName)) {
         window.location.href = createPageUrl("Dashboard");
       }
