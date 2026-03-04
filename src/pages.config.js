@@ -61,6 +61,7 @@ import Grades from './pages/Grades';
 import Homework from './pages/Homework';
 import Messages from './pages/Messages';
 import MobileSaisie from './pages/MobileSaisie';
+import Pilotage from './pages/Pilotage';
 import Resources from './pages/Resources';
 import RoleSelect from './pages/RoleSelect';
 import Sanctions from './pages/Sanctions';
@@ -72,7 +73,6 @@ import StudentDetail from './pages/StudentDetail';
 import Students from './pages/Students';
 import Subjects from './pages/Subjects';
 import Teachers from './pages/Teachers';
-import Pilotage from './pages/Pilotage';
 import __Layout from './Layout.jsx';
 
 
@@ -91,6 +91,7 @@ export const PAGES = {
     "Homework": Homework,
     "Messages": Messages,
     "MobileSaisie": MobileSaisie,
+    "Pilotage": Pilotage,
     "Resources": Resources,
     "RoleSelect": RoleSelect,
     "Sanctions": Sanctions,
@@ -102,7 +103,6 @@ export const PAGES = {
     "Students": Students,
     "Subjects": Subjects,
     "Teachers": Teachers,
-    "Pilotage": Pilotage,
 }
 
 export const pagesConfig = {

@@ -61,20 +61,41 @@ function KPICard({ title, value, subtitle, icon: Icon, color = "blue", trend }) 
 }
 
 // ─── Filters bar for teacher/director ──────────────────────────────────────────
+// Order: année scolaire → niveau → classe → matière → élève
 function FiltersBar({ schoolYears, classes, subjects, students, filters, onChange }) {
-  const filteredClasses = filters.schoolYear
-    ? classes.filter(c => c.school_year === filters.schoolYear)
-    : classes;
+  // Levels available given selected school year
+  const availableLevels = useMemo(() => {
+    const base = filters.schoolYear
+      ? classes.filter(c => c.school_year === filters.schoolYear)
+      : classes;
+    return [...new Set(base.map(c => c.level).filter(Boolean))].sort();
+  }, [classes, filters.schoolYear]);
 
-  const filteredStudents = filters.classId
-    ? students.filter(s => s.class_id === filters.classId && s.status === "active")
-    : students.filter(s => s.status === "active");
+  // Classes available given selected school year + level
+  const filteredClasses = useMemo(() => {
+    let base = filters.schoolYear
+      ? classes.filter(c => c.school_year === filters.schoolYear)
+      : classes;
+    if (filters.level) base = base.filter(c => c.level === filters.level);
+    return base;
+  }, [classes, filters.schoolYear, filters.level]);
+
+  // Students available given selected class (or all active if no class)
+  const filteredStudents = useMemo(() => {
+    return filters.classId
+      ? students.filter(s => s.class_id === filters.classId && s.status === "active")
+      : students.filter(s => s.status === "active");
+  }, [students, filters.classId]);
 
   return (
     <div className="flex flex-wrap gap-2 items-center p-3 bg-slate-50 rounded-xl border">
       <Filter className="w-4 h-4 text-slate-400" />
 
-      <Select value={filters.schoolYear || ""} onValueChange={v => onChange({ ...filters, schoolYear: v || null, classId: null, studentId: null })}>
+      {/* 1. Année scolaire */}
+      <Select
+        value={filters.schoolYear || ""}
+        onValueChange={v => onChange({ schoolYear: v || null, level: null, classId: null, subjectId: null, studentId: null })}
+      >
         <SelectTrigger className="w-40 h-8 text-xs">
           <SelectValue placeholder="Année scolaire" />
         </SelectTrigger>
@@ -84,7 +105,27 @@ function FiltersBar({ schoolYears, classes, subjects, students, filters, onChang
         </SelectContent>
       </Select>
 
-      <Select value={filters.classId || ""} onValueChange={v => onChange({ ...filters, classId: v || null, studentId: null })}>
+      {/* 2. Niveau */}
+      <Select
+        value={filters.level || ""}
+        onValueChange={v => onChange({ ...filters, level: v || null, classId: null, studentId: null })}
+      >
+        <SelectTrigger className="w-36 h-8 text-xs">
+          <SelectValue placeholder="Niveau" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={null}>Tous les niveaux</SelectItem>
+          {availableLevels.map(l => (
+            <SelectItem key={l} value={l}>{l}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      {/* 3. Classe */}
+      <Select
+        value={filters.classId || ""}
+        onValueChange={v => onChange({ ...filters, classId: v || null, studentId: null })}
+      >
         <SelectTrigger className="w-36 h-8 text-xs">
           <SelectValue placeholder="Classe" />
         </SelectTrigger>
@@ -94,19 +135,11 @@ function FiltersBar({ schoolYears, classes, subjects, students, filters, onChang
         </SelectContent>
       </Select>
 
-      <Select value={filters.level || ""} onValueChange={v => onChange({ ...filters, level: v || null })}>
-        <SelectTrigger className="w-36 h-8 text-xs">
-          <SelectValue placeholder="Niveau" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value={null}>Tous les niveaux</SelectItem>
-          {[...new Set(classes.map(c => c.level).filter(Boolean))].map(l => (
-            <SelectItem key={l} value={l}>{l}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
-      <Select value={filters.subjectId || ""} onValueChange={v => onChange({ ...filters, subjectId: v || null })}>
+      {/* 4. Matière */}
+      <Select
+        value={filters.subjectId || ""}
+        onValueChange={v => onChange({ ...filters, subjectId: v || null })}
+      >
         <SelectTrigger className="w-36 h-8 text-xs">
           <SelectValue placeholder="Matière" />
         </SelectTrigger>
@@ -116,7 +149,11 @@ function FiltersBar({ schoolYears, classes, subjects, students, filters, onChang
         </SelectContent>
       </Select>
 
-      <Select value={filters.studentId || ""} onValueChange={v => onChange({ ...filters, studentId: v || null })}>
+      {/* 5. Élève */}
+      <Select
+        value={filters.studentId || ""}
+        onValueChange={v => onChange({ ...filters, studentId: v || null })}
+      >
         <SelectTrigger className="w-44 h-8 text-xs">
           <SelectValue placeholder="Élève" />
         </SelectTrigger>
@@ -130,7 +167,7 @@ function FiltersBar({ schoolYears, classes, subjects, students, filters, onChang
 
       {Object.values(filters).some(Boolean) && (
         <Button variant="ghost" size="sm" className="h-8 text-xs text-slate-500"
-          onClick={() => onChange({ schoolYear: null, classId: null, level: null, subjectId: null, studentId: null })}>
+          onClick={() => onChange({ schoolYear: null, level: null, classId: null, subjectId: null, studentId: null })}>
           Réinitialiser
         </Button>
       )}
