@@ -205,6 +205,7 @@ export default function Administration() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editProfile, setEditProfile] = useState(null);
   const [deleteProfile, setDeleteProfile] = useState(null);
+  const [resendingId, setResendingId] = useState(null);
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
