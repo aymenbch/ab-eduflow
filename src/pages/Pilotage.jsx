@@ -14,7 +14,7 @@ import {
 import {
   TrendingUp, TrendingDown, Minus, Users, Award, AlertTriangle,
   BookOpen, Calendar, ShieldAlert, Target, Activity, User,
-  BarChart2, GraduationCap, CheckCircle, Clock, Loader2, Sparkles, Filter
+  BarChart2, GraduationCap, CheckCircle, Clock, Loader2, Sparkles, Filter, BrainCircuit
 } from "lucide-react";
 import EarlyWarningSystem from "@/components/analytics/EarlyWarningSystem";
 import TeacherAnalytics from "@/components/analytics/TeacherAnalytics";
