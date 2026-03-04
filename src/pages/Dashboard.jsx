@@ -277,11 +277,8 @@ export default function Dashboard() {
     const isDirecteur = ["directeur_general", "directeur_primaire", "directeur_college", "directeur_lycee"].includes(currentRole);
     const isSecretaire = currentRole === "secretaire";
 
-    if (isSecretaire) {
+    if (isDirecteur || isSecretaire) {
       return <AdminDashboard students={students} teachers={teachers} classes={classes} subjects={subjects} events={events} sanctions={sanctions} messages={messages} />;
-    }
-    if (isDirecteur) {
-      return <DirectionDashboardStrategic students={students} teachers={teachers} classes={classes} subjects={subjects} events={events} sanctions={sanctions} messages={messages} />;
     }
     if (currentRole === "enseignant") {
       return <TeacherDashboard classes={classes} homework={homework} messages={messages} />;
