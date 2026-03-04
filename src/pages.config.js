@@ -71,6 +71,7 @@ import Teachers from './pages/Teachers';
 import SchoolYearManager from './pages/SchoolYearManager';
 import MobileSaisie from './pages/MobileSaisie';
 import EspaceParent from './pages/EspaceParent';
+import StudentDashboard360 from './pages/StudentDashboard360';
 import __Layout from './Layout.jsx';
 
 
@@ -99,6 +100,7 @@ export const PAGES = {
     "SchoolYearManager": SchoolYearManager,
     "MobileSaisie": MobileSaisie,
     "EspaceParent": EspaceParent,
+    "StudentDashboard360": StudentDashboard360,
 }
 
 export const pagesConfig = {
