@@ -60,6 +60,38 @@ export default function Messages() {
     queryFn: () => base44.entities.Message.list("-created_date"),
   });
 
+  // Group messages into threads by subject (strip Re: prefix)
+  const getThreadKey = (subject) => subject?.replace(/^(Re:\s*)+/i, "").trim();
+
+  const getThread = (msg) => {
+    const key = getThreadKey(msg.subject);
+    return [...messages]
+      .filter(m => getThreadKey(m.subject) === key)
+      .sort((a, b) => new Date(a.created_date) - new Date(b.created_date));
+  };
+
+  const handleReply = async () => {
+    if (!replyContent.trim() || !selectedMessage) return;
+    setReplying(true);
+    const reSubject = selectedMessage.subject.startsWith("Re:")
+      ? selectedMessage.subject
+      : `Re: ${selectedMessage.subject}`;
+    await base44.entities.Message.create({
+      sender_type: "admin",
+      sender_name: "Administration",
+      recipient_type: selectedMessage.sender_type || "parent",
+      recipient_id: selectedMessage.sender_id || "",
+      student_id: selectedMessage.student_id || "",
+      subject: reSubject,
+      content: replyContent.trim(),
+      priority: selectedMessage.priority || "normal",
+      read: false,
+    });
+    setReplyContent("");
+    setReplying(false);
+    queryClient.invalidateQueries({ queryKey: ["messages"] });
+  };
+
   const { data: students = [] } = useQuery({
     queryKey: ["students"],
     queryFn: () => base44.entities.Student.list(),
