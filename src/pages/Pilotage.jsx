@@ -601,10 +601,15 @@ export default function Pilotage() {
       </div>
 
       <Tabs defaultValue={defaultTab}>
-        <TabsList className={`grid w-full ${tabs.length === 1 ? "grid-cols-1" : tabs.length === 2 ? "grid-cols-2" : "grid-cols-4"}`}>
+        <TabsList className={`grid w-full grid-cols-${tabs.length}`}>
           {tabs.includes("vue_globale") && (
             <TabsTrigger value="vue_globale" className="flex items-center gap-2">
               <BarChart2 className="w-4 h-4" /> Vue globale
+            </TabsTrigger>
+          )}
+          {tabs.includes("performance") && (
+            <TabsTrigger value="performance" className="flex items-center gap-2">
+              <BarChart2 className="w-4 h-4" /> Performance classes
             </TabsTrigger>
           )}
           {tabs.includes("eleve") && (
