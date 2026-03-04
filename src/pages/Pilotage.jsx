@@ -724,6 +724,21 @@ export default function Pilotage() {
             <EarlyWarningSystem />
           </TabsContent>
         )}
+
+        {/* IA Prédictive */}
+        {tabs.includes("predictive") && (
+          <TabsContent value="predictive" className="mt-4">
+            <PredictiveAI
+              classes={classes}
+              students={students}
+              grades={grades}
+              exams={exams}
+              subjects={subjects}
+              attendance={attendance}
+              sanctions={sanctions}
+            />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );
