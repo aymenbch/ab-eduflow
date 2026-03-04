@@ -745,6 +745,21 @@ export default function Pilotage() {
             />
           </TabsContent>
         )}
+
+        {/* Profil Psychopédagogique */}
+        {tabs.includes("psycho") && (
+          <TabsContent value="psycho" className="mt-4">
+            <PsychoPedagogicalProfile
+              classes={classes}
+              students={students}
+              grades={grades}
+              exams={exams}
+              subjects={subjects}
+              attendance={attendance}
+              sanctions={sanctions}
+            />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );
