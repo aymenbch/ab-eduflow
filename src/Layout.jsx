@@ -300,6 +300,9 @@ export default function Layout({ children, currentPageName }) {
           {children}
         </main>
       </div>
+
+      {/* AI Chatbot - visible for all logged-in roles */}
+      {currentRole && <AIChatbot />}
     </div>
   );
 }
