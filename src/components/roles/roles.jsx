@@ -7,7 +7,7 @@ export const ROLES = {
     bgColor: "bg-slate-100",
     icon: "👑",
     description: "Accès complet à tous les modules",
-    pages: ["Dashboard", "Students", "Teachers", "Classes", "Subjects", "Staff", "Schedule", "Exams", "Grades", "Homework", "Resources", "Attendance", "Sanctions", "Messages", "Events", "Finance", "Bulletins", "SchoolYearManager", "MobileSaisie", "StudentDashboard360"],
+    pages: ["Dashboard", "Students", "Teachers", "Classes", "Subjects", "Staff", "Schedule", "Exams", "Grades", "Homework", "Resources", "Attendance", "Sanctions", "Messages", "Events", "Finance", "Bulletins", "SchoolYearManager", "MobileSaisie", "Pilotage"],
   },
   directeur_primaire: {
     label: "Directeur du Primaire",
@@ -16,7 +16,7 @@ export const ROLES = {
     bgColor: "bg-blue-100",
     icon: "🏫",
     description: "Gestion du cycle primaire",
-    pages: ["Dashboard", "Students", "Teachers", "Classes", "Subjects", "Schedule", "Exams", "Grades", "Attendance", "Sanctions", "Messages", "Events", "Finance", "Bulletins", "StudentDashboard360"],
+    pages: ["Dashboard", "Students", "Teachers", "Classes", "Subjects", "Schedule", "Exams", "Grades", "Attendance", "Sanctions", "Messages", "Events", "Finance", "Bulletins", "Pilotage"],
   },
   directeur_college: {
     label: "Directeur du Collège",
@@ -25,7 +25,7 @@ export const ROLES = {
     bgColor: "bg-indigo-100",
     icon: "🎓",
     description: "Gestion du cycle collège",
-    pages: ["Dashboard", "Students", "Teachers", "Classes", "Subjects", "Schedule", "Exams", "Grades", "Attendance", "Sanctions", "Messages", "Events", "Finance", "Bulletins", "StudentDashboard360"],
+    pages: ["Dashboard", "Students", "Teachers", "Classes", "Subjects", "Schedule", "Exams", "Grades", "Attendance", "Sanctions", "Messages", "Events", "Finance", "Bulletins", "Pilotage"],
   },
   directeur_lycee: {
     label: "Directeur du Lycée",
@@ -34,7 +34,7 @@ export const ROLES = {
     bgColor: "bg-violet-100",
     icon: "🏛️",
     description: "Gestion du cycle lycée",
-    pages: ["Dashboard", "Students", "Teachers", "Classes", "Subjects", "Schedule", "Exams", "Grades", "Attendance", "Sanctions", "Messages", "Events", "Finance", "Bulletins", "StudentDashboard360"],
+    pages: ["Dashboard", "Students", "Teachers", "Classes", "Subjects", "Schedule", "Exams", "Grades", "Attendance", "Sanctions", "Messages", "Events", "Finance", "Bulletins", "Pilotage"],
   },
   cpe: {
     label: "CPE",
@@ -52,7 +52,7 @@ export const ROLES = {
     bgColor: "bg-green-100",
     icon: "📚",
     description: "Cours, notes, devoirs et ressources",
-    pages: ["Dashboard", "Students", "Classes", "Schedule", "Exams", "Grades", "Homework", "Resources", "Attendance", "Messages", "MobileSaisie", "StudentDashboard360"],
+    pages: ["Dashboard", "Students", "Classes", "Schedule", "Exams", "Grades", "Homework", "Resources", "Attendance", "Messages", "MobileSaisie", "Pilotage"],
   },
   secretaire: {
     label: "Secrétaire",
@@ -88,7 +88,7 @@ export const ROLES = {
     bgColor: "bg-amber-100",
     icon: "👨‍👩‍👧",
     description: "Suivi scolaire de mon enfant",
-    pages: ["Dashboard", "EspaceParent", "StudentDashboard360", "Grades", "Attendance", "Homework", "Sanctions", "Messages", "Events"],
+    pages: ["Dashboard", "EspaceParent", "Pilotage", "Grades", "Attendance", "Homework", "Sanctions", "Messages", "Events"],
   },
 };
 
@@ -108,4 +108,5 @@ export const PAGE_LABELS = {
   Sanctions: "Sanctions",
   Messages: "Messages",
   Events: "Événements",
+  Pilotage: "Pilotage & Performance",
 };
