@@ -88,7 +88,7 @@ export const ROLES = {
     bgColor: "bg-amber-100",
     icon: "👨‍👩‍👧",
     description: "Suivi scolaire de mon enfant",
-    pages: ["Dashboard", "Grades", "Attendance", "Homework", "Sanctions", "Messages", "Events"],
+    pages: ["Dashboard", "EspaceParent", "Grades", "Attendance", "Homework", "Sanctions", "Messages", "Events"],
   },
 };
 
