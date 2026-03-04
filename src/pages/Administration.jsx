@@ -18,7 +18,7 @@ import {
 import {
   Users, Search, MoreVertical, Edit, Trash2, UserPlus,
   ShieldCheck, Ban, Mail, Lock, Settings, CheckCircle2,
-  Clock, XCircle, LayoutGrid, List, Filter, Send
+  Clock, XCircle, LayoutGrid, List, Send, Loader2
 } from "lucide-react";
 import { ROLES, PAGE_LABELS } from "@/components/roles/roles";
 import InviteUserModal from "@/components/admin/InviteUserModal";
@@ -205,7 +205,6 @@ export default function Administration() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editProfile, setEditProfile] = useState(null);
   const [deleteProfile, setDeleteProfile] = useState(null);
-  const [resendingId, setResendingId] = useState(null);
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
