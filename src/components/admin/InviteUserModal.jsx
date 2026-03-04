@@ -67,7 +67,7 @@ export default function InviteUserModal({ open, onClose, onSaved, profile }) {
       }
       onSaved();
     } catch (err) {
-      setInviteError(err.message || "Erreur lors de la sauvegarde");
+      setInviteError(err.message || "Erreur lors de l'invitation. L'email est peut-être déjà inscrit ou invalide.");
     }
     setSaving(false);
   };
