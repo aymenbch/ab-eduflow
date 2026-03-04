@@ -1,8 +1,10 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
+import SignaturePad from "./SignaturePad";
 
 export default function BulletinPreview({
   student, trimester, cls, teachers, grades, exams, subjects, attendance, allClassStudents, allGrades
 }) {
+  const [signatures, setSignatures] = useState({ directeur: null, profPrincipal: null, parent: null });
   const mainTeacher = teachers.find(t => t.id === cls?.main_teacher_id);
 
   const data = useMemo(() => {
