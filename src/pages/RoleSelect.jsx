@@ -18,25 +18,47 @@ export default function RoleSelect() {
         <p className="text-xl text-slate-500">Choisissez votre profil pour accéder à votre espace</p>
       </div>
 
-      <div className="w-full max-w-5xl grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-        {Object.entries(ROLES).map(([key, role]) => (
+      <div className="w-full max-w-5xl space-y-4">
+        {/* Admin Système — highlighted first */}
+        {ROLES.admin_systeme && (
           <button
-            key={key}
-            onClick={() => handleRoleSelect(key)}
-            className="group relative flex flex-col items-center p-5 bg-white rounded-2xl border-2 border-slate-100 hover:border-transparent hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+            onClick={() => handleRoleSelect("admin_systeme")}
+            className="group relative w-full flex items-center gap-5 p-5 bg-white rounded-2xl border-2 border-red-200 hover:border-red-400 hover:shadow-xl transition-all duration-300"
           >
-            <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${role.color} flex items-center justify-center text-2xl shadow-lg mb-3 group-hover:scale-110 transition-transform duration-300`}>
-              {role.icon}
+            <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${ROLES.admin_systeme.color} flex items-center justify-center text-3xl shadow-lg group-hover:scale-110 transition-transform duration-300 flex-shrink-0`}>
+              {ROLES.admin_systeme.icon}
             </div>
-            <h3 className="font-bold text-slate-800 text-sm text-center leading-tight mb-1">
-              {role.label}
-            </h3>
-            <p className="text-xs text-slate-400 text-center line-clamp-2">
-              {role.description}
-            </p>
-            <div className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${role.color} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
+            <div className="text-left flex-1">
+              <div className="flex items-center gap-2 mb-0.5">
+                <h3 className="font-bold text-slate-800">{ROLES.admin_systeme.label}</h3>
+                <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-medium">Accès complet</span>
+              </div>
+              <p className="text-sm text-slate-400">{ROLES.admin_systeme.description}</p>
+            </div>
           </button>
-        ))}
+        )}
+
+        {/* Other roles grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          {Object.entries(ROLES).filter(([key]) => key !== "admin_systeme").map(([key, role]) => (
+            <button
+              key={key}
+              onClick={() => handleRoleSelect(key)}
+              className="group relative flex flex-col items-center p-5 bg-white rounded-2xl border-2 border-slate-100 hover:border-transparent hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+            >
+              <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${role.color} flex items-center justify-center text-2xl shadow-lg mb-3 group-hover:scale-110 transition-transform duration-300`}>
+                {role.icon}
+              </div>
+              <h3 className="font-bold text-slate-800 text-sm text-center leading-tight mb-1">
+                {role.label}
+              </h3>
+              <p className="text-xs text-slate-400 text-center line-clamp-2">
+                {role.description}
+              </p>
+              <div className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${role.color} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
+            </button>
+          ))}
+        </div>
       </div>
 
       <p className="mt-10 text-sm text-slate-400">
