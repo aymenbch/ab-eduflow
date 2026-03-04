@@ -479,6 +479,9 @@ export default function Dashboard() {
   const { data: messages = [] } = useQuery({ queryKey: ["messages"], queryFn: () => base44.entities.Message.list() });
   const { data: homework = [] } = useQuery({ queryKey: ["homework"], queryFn: () => base44.entities.Homework.list() });
   const { data: staff = [] } = useQuery({ queryKey: ["staff"], queryFn: () => base44.entities.Staff.list() });
+  const { data: grades = [] } = useQuery({ queryKey: ["grades"], queryFn: () => base44.entities.Grade.list(), enabled: currentRole === "enseignant" });
+  const { data: exams = [] } = useQuery({ queryKey: ["exams"], queryFn: () => base44.entities.Exam.list(), enabled: currentRole === "enseignant" });
+  const { data: attendance = [] } = useQuery({ queryKey: ["attendance"], queryFn: () => base44.entities.Attendance.list(), enabled: currentRole === "enseignant" });
 
   const renderDashboard = () => {
     if (!currentRole) return null;
