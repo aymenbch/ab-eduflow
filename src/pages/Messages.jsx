@@ -246,20 +246,12 @@ export default function Messages() {
           {selectedMessage ? (
             <Card>
               <CardContent className="p-6">
-                <div className="flex items-start justify-between mb-6">
+                {/* Header */}
+                <div className="flex items-start justify-between mb-4">
                   <div>
-                    <h2 className="text-xl font-bold">{selectedMessage.subject}</h2>
-                    <p className="text-slate-500 mt-1">
-                      De: {selectedMessage.sender_name}
-                    </p>
-                    <p className="text-sm text-slate-400">
-                      {selectedMessage.created_date &&
-                        format(new Date(selectedMessage.created_date), "EEEE d MMMM yyyy à HH:mm", {
-                          locale: fr,
-                        })}
-                    </p>
+                    <h2 className="text-xl font-bold">{getThreadKey(selectedMessage.subject)}</h2>
                     {selectedMessage.student_id && studentMap[selectedMessage.student_id] && (
-                      <p className="text-sm text-slate-500 mt-2">
+                      <p className="text-sm text-slate-500 mt-1">
                         Concernant: {studentMap[selectedMessage.student_id].first_name}{" "}
                         {studentMap[selectedMessage.student_id].last_name}
                       </p>
@@ -278,8 +270,55 @@ export default function Messages() {
                   </Button>
                 </div>
 
-                <div className="prose max-w-none">
-                  <p className="whitespace-pre-wrap">{selectedMessage.content}</p>
+                {/* Thread messages */}
+                <div className="space-y-4 max-h-[380px] overflow-y-auto mb-4 pr-1">
+                  {getThread(selectedMessage).map((msg, i) => {
+                    const isAdmin = msg.sender_type === "admin";
+                    return (
+                      <div key={msg.id} className={`flex ${isAdmin ? "justify-end" : "justify-start"}`}>
+                        <div className={`max-w-[85%] rounded-2xl px-4 py-3 ${
+                          isAdmin
+                            ? "bg-blue-600 text-white rounded-br-sm"
+                            : "bg-slate-100 text-slate-900 rounded-bl-sm"
+                        }`}>
+                          <div className={`flex items-center gap-2 mb-1 text-xs ${isAdmin ? "text-blue-200" : "text-slate-500"}`}>
+                            <span className="font-semibold">{msg.sender_name}</span>
+                            <span>·</span>
+                            <span>{msg.created_date && format(new Date(msg.created_date), "d MMM HH:mm", { locale: fr })}</span>
+                          </div>
+                          <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Reply box */}
+                <div className="border-t pt-4">
+                  <div className="flex items-center gap-2 mb-2 text-sm text-slate-600">
+                    <Reply className="w-4 h-4 text-blue-500" />
+                    <span>Répondre à <strong>{selectedMessage.sender_name}</strong></span>
+                  </div>
+                  <div className="flex gap-2">
+                    <Textarea
+                      value={replyContent}
+                      onChange={(e) => setReplyContent(e.target.value)}
+                      placeholder="Écrivez votre réponse..."
+                      rows={3}
+                      className="flex-1 resize-none"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) handleReply();
+                      }}
+                    />
+                    <Button
+                      onClick={handleReply}
+                      disabled={!replyContent.trim() || replying}
+                      className="self-end bg-blue-600 hover:bg-blue-700"
+                    >
+                      {replying ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-slate-400 mt-1">Ctrl+Entrée pour envoyer</p>
                 </div>
               </CardContent>
             </Card>
