@@ -18,7 +18,7 @@ import {
 import {
   Users, Search, MoreVertical, Edit, Trash2, UserPlus,
   ShieldCheck, Ban, Mail, Lock, Settings, CheckCircle2,
-  Clock, XCircle, LayoutGrid, List, Send, Loader2
+  Clock, XCircle, LayoutGrid, List, Filter, Send
 } from "lucide-react";
 import { ROLES, PAGE_LABELS } from "@/components/roles/roles";
 import InviteUserModal from "@/components/admin/InviteUserModal";
@@ -52,7 +52,7 @@ function AccessDenied() {
 }
 
 // ─── User Card (grid view) ─────────────────────────────────────────────────────
-function UserCard({ profile, onEdit, onToggleSuspend, onDelete, onResendInvite, resending }) {
+function UserCard({ profile, onEdit, onToggleSuspend, onDelete, onResendInvite, resendingId }) {
   const role = ROLES[profile.edugest_role];
   const pages = profile.use_custom_pages ? (profile.custom_pages || []) : (role?.pages || []);
   const StatusIcon = STATUS_ICONS[profile.status] || CheckCircle2;
@@ -83,6 +83,11 @@ function UserCard({ profile, onEdit, onToggleSuspend, onDelete, onResendInvite, 
               <DropdownMenuItem onClick={() => onEdit(profile)}>
                 <Edit className="w-4 h-4 mr-2" /> Modifier profil & modules
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onResendInvite(profile)} disabled={resendingId === profile.id}>
+                {resendingId === profile.id
+                  ? <><Clock className="w-4 h-4 mr-2 animate-spin" /> Envoi en cours...</>
+                  : <><Send className="w-4 h-4 mr-2" /> Renvoyer l'invitation</>}
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onToggleSuspend(profile)}>
                 <Ban className="w-4 h-4 mr-2" />
                 {profile.status === "suspended" ? "Réactiver" : "Suspendre"}
@@ -91,10 +96,10 @@ function UserCard({ profile, onEdit, onToggleSuspend, onDelete, onResendInvite, 
                 <Trash2 className="w-4 h-4 mr-2" /> Supprimer
               </DropdownMenuItem>
             </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+            </DropdownMenu>
+            </div>
 
-        {/* Status + role badges */}
+            {/* Status + role badges */}
         <div className="flex flex-wrap items-center gap-1.5 mb-3">
           <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border font-medium ${STATUS_COLORS[profile.status] || "bg-slate-100 text-slate-600"}`}>
             <StatusIcon className="w-3 h-3" />
@@ -134,7 +139,7 @@ function UserCard({ profile, onEdit, onToggleSuspend, onDelete, onResendInvite, 
 }
 
 // ─── User Row (list view) ──────────────────────────────────────────────────────
-function UserRow({ profile, onEdit, onToggleSuspend, onDelete }) {
+function UserRow({ profile, onEdit, onToggleSuspend, onDelete, onResendInvite, resendingId }) {
   const role = ROLES[profile.edugest_role];
   const pages = profile.use_custom_pages ? (profile.custom_pages || []) : (role?.pages || []);
   const StatusIcon = STATUS_ICONS[profile.status] || CheckCircle2;
@@ -240,11 +245,7 @@ export default function Administration() {
 
   const handleResendInvite = async (profile) => {
     setResendingId(profile.id);
-    try {
-      await base44.users.inviteUser(profile.email, "user");
-    } catch (e) {
-      // ignore — user may already exist
-    }
+    await base44.users.inviteUser(profile.email, "user");
     setResendingId(null);
   };
 
