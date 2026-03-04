@@ -643,6 +643,11 @@ export default function Pilotage() {
               <BrainCircuit className="w-4 h-4" /> IA Prédictive
             </TabsTrigger>
           )}
+          {tabs.includes("psycho") && (
+            <TabsTrigger value="psycho" className="flex items-center gap-2">
+              <Brain className="w-4 h-4" /> Profil Psycho
+            </TabsTrigger>
+          )}
         </TabsList>
 
         {/* Performance classes (enseignant) */}
