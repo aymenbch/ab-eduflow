@@ -72,6 +72,7 @@ const ADMIN_NAV = [
 export default function Layout({ children, currentPageName }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentRole, setCurrentRole] = useState(null);
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const location = useLocation();
   const currentPath = location.pathname.split('/').pop() || 'Dashboard';
 
