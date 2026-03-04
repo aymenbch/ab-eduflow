@@ -629,6 +629,14 @@ export default function Pilotage() {
           )}
         </TabsList>
 
+        {/* Performance classes (enseignant) */}
+        {tabs.includes("performance") && (
+          <TabsContent value="performance" className="mt-4 space-y-4">
+            <FiltersBar schoolYears={schoolYears} classes={classes} subjects={subjects} students={students} filters={filters} onChange={setFilters} />
+            <TeacherPerformanceView classes={classes} students={students} grades={grades} exams={exams} subjects={subjects} attendance={attendance} />
+          </TabsContent>
+        )}
+
         {/* Vue globale */}
         {tabs.includes("vue_globale") && (
           <TabsContent value="vue_globale" className="mt-4 space-y-4">
