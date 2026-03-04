@@ -43,7 +43,7 @@ export const ROLES = {
     bgColor: "bg-orange-100",
     icon: "👮",
     description: "Vie scolaire, discipline et présences",
-    pages: ["Dashboard", "Students", "Attendance", "Sanctions", "Messages", "Events"],
+    pages: ["Dashboard", "Students", "Attendance", "Sanctions", "Messages", "Events", "Pilotage"],
   },
   enseignant: {
     label: "Enseignant",
