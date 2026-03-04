@@ -23,6 +23,8 @@ import {
   DollarSign,
   ShieldCheck,
   BarChart2,
+  CalendarDays,
+  Smartphone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -53,6 +55,8 @@ const ALL_NAVIGATION = [
   { name: "Événements", href: "Events", icon: Calendar },
   { name: "Finance & Contentieux", href: "Finance", icon: DollarSign },
   { name: "Bulletins Scolaires", href: "Bulletins", icon: FileText },
+  { name: "Années Scolaires", href: "SchoolYearManager", icon: CalendarDays },
+  { name: "Saisie Rapide Mobile", href: "MobileSaisie", icon: Smartphone },
 ];
 
 const ADMIN_NAV = [
