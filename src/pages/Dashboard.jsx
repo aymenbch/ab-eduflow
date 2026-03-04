@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import StatCard from "@/components/ui/StatCard";
@@ -14,16 +14,22 @@ import {
   ClipboardList,
   FileText,
   Clock,
+  BarChart2,
+  Activity,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { ROLES } from "@/components/roles/roles";
 import { createPageUrl } from "@/utils";
 import { Link } from "react-router-dom";
 import FinanceWidget from "@/components/dashboard/FinanceWidget";
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
+} from "recharts";
 
 // Role-specific dashboard content
 function AdminDashboard({ students, teachers, classes, subjects, events, sanctions, messages }) {
