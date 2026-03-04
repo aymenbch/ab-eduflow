@@ -580,7 +580,7 @@ export default function Pilotage() {
   // Determine tabs based on role
   const tabs = useMemo(() => {
     if (isParent) return ["eleve"];
-    if (isTeacher) return ["eleve", "alertes"];
+    if (isTeacher) return ["performance", "eleve", "alertes"];
     if (isDirector) return ["vue_globale", "eleve", "enseignants", "alertes"];
     return ["vue_globale", "eleve", "enseignants", "alertes"];
   }, [isParent, isTeacher, isDirector]);
