@@ -7,7 +7,7 @@ export const ROLES = {
     bgColor: "bg-slate-100",
     icon: "👑",
     description: "Accès complet à tous les modules",
-    pages: ["Dashboard", "Students", "Teachers", "Classes", "Subjects", "Staff", "Schedule", "Exams", "Grades", "Homework", "Resources", "Attendance", "Sanctions", "Messages", "Events", "Finance", "Bulletins"],
+    pages: ["Dashboard", "Students", "Teachers", "Classes", "Subjects", "Staff", "Schedule", "Exams", "Grades", "Homework", "Resources", "Attendance", "Sanctions", "Messages", "Events", "Finance", "Bulletins", "SchoolYearManager", "MobileSaisie"],
   },
   directeur_primaire: {
     label: "Directeur du Primaire",
@@ -52,7 +52,7 @@ export const ROLES = {
     bgColor: "bg-green-100",
     icon: "📚",
     description: "Cours, notes, devoirs et ressources",
-    pages: ["Dashboard", "Students", "Classes", "Schedule", "Exams", "Grades", "Homework", "Resources", "Attendance", "Messages"],
+    pages: ["Dashboard", "Students", "Classes", "Schedule", "Exams", "Grades", "Homework", "Resources", "Attendance", "Messages", "MobileSaisie"],
   },
   secretaire: {
     label: "Secrétaire",
