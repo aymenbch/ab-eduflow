@@ -585,9 +585,9 @@ export default function Pilotage() {
 
   const tabs = useMemo(() => {
     if (isParent) return ["eleve"];
-    if (isTeacher) return ["performance", "eleve", "alertes", "predictive"];
-    if (isCPE) return ["alertes", "predictive"];
-    if (isDirector) return ["vue_globale", "strategique", "eleve", "enseignants", "alertes", "predictive"];
+    if (isTeacher) return ["performance", "eleve", "alertes", "predictive", "psycho"];
+    if (isCPE) return ["alertes", "predictive", "psycho"];
+    if (isDirector) return ["vue_globale", "strategique", "eleve", "enseignants", "alertes", "predictive", "psycho"];
     return ["vue_globale", "strategique", "eleve", "enseignants", "alertes", "predictive"];
   }, [isParent, isTeacher, isDirector, isCPE]);
 
