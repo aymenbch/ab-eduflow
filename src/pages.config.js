@@ -53,25 +53,26 @@ import Attendance from './pages/Attendance';
 import Bulletins from './pages/Bulletins';
 import Classes from './pages/Classes';
 import Dashboard from './pages/Dashboard';
+import EspaceParent from './pages/EspaceParent';
 import Events from './pages/Events';
 import Exams from './pages/Exams';
 import Finance from './pages/Finance';
 import Grades from './pages/Grades';
 import Homework from './pages/Homework';
 import Messages from './pages/Messages';
+import MobileSaisie from './pages/MobileSaisie';
 import Resources from './pages/Resources';
 import RoleSelect from './pages/RoleSelect';
 import Sanctions from './pages/Sanctions';
 import Schedule from './pages/Schedule';
+import SchoolYearManager from './pages/SchoolYearManager';
 import Staff from './pages/Staff';
+import StudentDashboard360 from './pages/StudentDashboard360';
 import StudentDetail from './pages/StudentDetail';
 import Students from './pages/Students';
 import Subjects from './pages/Subjects';
 import Teachers from './pages/Teachers';
-import SchoolYearManager from './pages/SchoolYearManager';
-import MobileSaisie from './pages/MobileSaisie';
-import EspaceParent from './pages/EspaceParent';
-import StudentDashboard360 from './pages/StudentDashboard360';
+import Pilotage from './pages/Pilotage';
 import __Layout from './Layout.jsx';
 
 
@@ -82,25 +83,26 @@ export const PAGES = {
     "Bulletins": Bulletins,
     "Classes": Classes,
     "Dashboard": Dashboard,
+    "EspaceParent": EspaceParent,
     "Events": Events,
     "Exams": Exams,
     "Finance": Finance,
     "Grades": Grades,
     "Homework": Homework,
     "Messages": Messages,
+    "MobileSaisie": MobileSaisie,
     "Resources": Resources,
     "RoleSelect": RoleSelect,
     "Sanctions": Sanctions,
     "Schedule": Schedule,
+    "SchoolYearManager": SchoolYearManager,
     "Staff": Staff,
+    "StudentDashboard360": StudentDashboard360,
     "StudentDetail": StudentDetail,
     "Students": Students,
     "Subjects": Subjects,
     "Teachers": Teachers,
-    "SchoolYearManager": SchoolYearManager,
-    "MobileSaisie": MobileSaisie,
-    "EspaceParent": EspaceParent,
-    "StudentDashboard360": StudentDashboard360,
+    "Pilotage": Pilotage,
 }
 
 export const pagesConfig = {
