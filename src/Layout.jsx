@@ -59,6 +59,7 @@ const ALL_NAVIGATION = [
   { name: "Années Scolaires", href: "SchoolYearManager", icon: CalendarDays },
   { name: "Saisie Rapide Mobile", href: "MobileSaisie", icon: Smartphone },
   { name: "Espace Parents Premium", href: "EspaceParent", icon: Star },
+  { name: "Dashboard Élève 360°", href: "StudentDashboard360", icon: Activity },
 ];
 
 const ADMIN_NAV = [
