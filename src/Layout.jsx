@@ -100,6 +100,7 @@ export default function Layout({ children, currentPageName }) {
   // Only directeur_general sees the Administration page
   const isAdmin = currentRole === "directeur_general";
 
+
   // Block access to unauthorized pages
   useEffect(() => {
     if (currentRole && roleConfig && currentPageName && currentPageName !== "RoleSelect") {
