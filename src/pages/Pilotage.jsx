@@ -580,12 +580,15 @@ export default function Pilotage() {
   const showFilters = isTeacher || isDirector;
 
   // Determine tabs based on role
+  const isCPE = role === "cpe";
+
   const tabs = useMemo(() => {
     if (isParent) return ["eleve"];
-    if (isTeacher) return ["performance", "eleve", "alertes"];
-    if (isDirector) return ["vue_globale", "strategique", "eleve", "enseignants", "alertes"];
-    return ["vue_globale", "strategique", "eleve", "enseignants", "alertes"];
-  }, [isParent, isTeacher, isDirector]);
+    if (isTeacher) return ["performance", "eleve", "alertes", "predictive"];
+    if (isCPE) return ["alertes", "predictive"];
+    if (isDirector) return ["vue_globale", "strategique", "eleve", "enseignants", "alertes", "predictive"];
+    return ["vue_globale", "strategique", "eleve", "enseignants", "alertes", "predictive"];
+  }, [isParent, isTeacher, isDirector, isCPE]);
 
   const defaultTab = tabs[0];
 
