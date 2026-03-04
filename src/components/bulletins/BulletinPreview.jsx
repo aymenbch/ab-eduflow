@@ -197,22 +197,42 @@ export default function BulletinPreview({
         </div>
       </div>
 
-      {/* Signatures */}
-      <div className="grid grid-cols-3 gap-8 mt-8 pt-4 border-t border-slate-200">
-        <div className="text-center">
-          <div className="text-xs text-slate-500 mb-8">Le Directeur</div>
-          <div className="border-b border-slate-400 w-full"></div>
-          <div className="text-xs text-slate-400 mt-1">Signature & Cachet</div>
+      {/* Signatures électroniques */}
+      <div className="mt-8 pt-4 border-t border-slate-200">
+        <div className="flex items-center gap-2 mb-4 print:hidden">
+          <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Signatures électroniques</span>
+          <span className="text-xs text-slate-400">— Cliquez sur un champ pour signer</span>
+          {(signatures.directeur || signatures.profPrincipal || signatures.parent) && (
+            <span className="ml-auto text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
+              ✓ {[signatures.directeur, signatures.profPrincipal, signatures.parent].filter(Boolean).length}/3 signés
+            </span>
+          )}
         </div>
-        <div className="text-center">
-          <div className="text-xs text-slate-500 mb-8">Prof. Principal</div>
-          <div className="border-b border-slate-400 w-full"></div>
-          <div className="text-xs text-slate-400 mt-1">Signature</div>
-        </div>
-        <div className="text-center">
-          <div className="text-xs text-slate-500 mb-8">Parent / Tuteur</div>
-          <div className="border-b border-slate-400 w-full"></div>
-          <div className="text-xs text-slate-400 mt-1">Signature</div>
+        <div className="grid grid-cols-3 gap-8">
+          <div>
+            <div className="text-xs text-slate-500 mb-2 text-center">Le Directeur</div>
+            <SignaturePad
+              label="Signature & Cachet"
+              existingSignature={signatures.directeur}
+              onSign={(sig) => setSignatures(prev => ({ ...prev, directeur: sig }))}
+            />
+          </div>
+          <div>
+            <div className="text-xs text-slate-500 mb-2 text-center">Prof. Principal</div>
+            <SignaturePad
+              label="Signature"
+              existingSignature={signatures.profPrincipal}
+              onSign={(sig) => setSignatures(prev => ({ ...prev, profPrincipal: sig }))}
+            />
+          </div>
+          <div>
+            <div className="text-xs text-slate-500 mb-2 text-center">Parent / Tuteur</div>
+            <SignaturePad
+              label="Signature"
+              existingSignature={signatures.parent}
+              onSign={(sig) => setSignatures(prev => ({ ...prev, parent: sig }))}
+            />
+          </div>
         </div>
       </div>
     </div>
