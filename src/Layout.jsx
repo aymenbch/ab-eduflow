@@ -60,11 +60,10 @@ const ALL_NAVIGATION = [
   { name: "Années Scolaires", href: "SchoolYearManager", icon: CalendarDays },
   { name: "Saisie Rapide Mobile", href: "MobileSaisie", icon: Smartphone },
   { name: "Espace Parents Premium", href: "EspaceParent", icon: Star },
-  { name: "Dashboard Élève 360°", href: "StudentDashboard360", icon: Activity },
+  { name: "Pilotage & Performance", href: "Pilotage", icon: TrendingUp },
 ];
 
 const ADMIN_NAV = [
-  { name: "Analytics & BI", href: "Analytics", icon: BarChart2 },
   { name: "Administration", href: "Administration", icon: ShieldCheck },
 ];
 
