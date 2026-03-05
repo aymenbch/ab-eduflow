@@ -68,13 +68,13 @@ import RoleSelect from './pages/RoleSelect';
 import Sanctions from './pages/Sanctions';
 import Schedule from './pages/Schedule';
 import SchoolYearManager from './pages/SchoolYearManager';
+import SocialNetwork from './pages/SocialNetwork';
 import Staff from './pages/Staff';
 import StudentDashboard360 from './pages/StudentDashboard360';
 import StudentDetail from './pages/StudentDetail';
 import Students from './pages/Students';
 import Subjects from './pages/Subjects';
 import Teachers from './pages/Teachers';
-import SocialNetwork from './pages/SocialNetwork';
 import __Layout from './Layout.jsx';
 
 
@@ -100,13 +100,13 @@ export const PAGES = {
     "Sanctions": Sanctions,
     "Schedule": Schedule,
     "SchoolYearManager": SchoolYearManager,
+    "SocialNetwork": SocialNetwork,
     "Staff": Staff,
     "StudentDashboard360": StudentDashboard360,
     "StudentDetail": StudentDetail,
     "Students": Students,
     "Subjects": Subjects,
     "Teachers": Teachers,
-    "SocialNetwork": SocialNetwork,
 }
 
 export const pagesConfig = {
