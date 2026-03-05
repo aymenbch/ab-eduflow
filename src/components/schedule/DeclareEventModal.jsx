@@ -90,6 +90,16 @@ export default function DeclareEventModal({ open, onClose, schedule, subject, te
     onClose();
   };
 
+  const handleSendSMS = () => {
+    const msg = buildWhatsAppMessage({ eventType, eventDate, subject, teacher, schedule, description, replacementDate, replacementTime, replacementRoom });
+    const number = smsNumber.replace(/\D/g, "");
+    const encoded = encodeURIComponent(msg);
+    const url = number ? `sms:${number}?body=${encoded}` : `sms:?body=${encoded}`;
+    window.open(url, "_blank");
+    setSmsSent(true);
+    toast.success("SMS ouvert pour l'envoi de la notification");
+  };
+
   const handleSendWhatsApp = () => {
     const msg = buildWhatsAppMessage({ eventType, eventDate, subject, teacher, schedule, description, replacementDate, replacementTime, replacementRoom });
     const encoded = encodeURIComponent(msg);
