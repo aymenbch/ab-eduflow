@@ -86,7 +86,7 @@ export default function DeclareEventModal({ open, onClose, schedule, subject, te
   const handleClose = () => {
     setEventType(""); setEventDate(new Date().toISOString().split("T")[0]);
     setDescription(""); setReplacementDate(""); setReplacementTime(""); setReplacementRoom("");
-    setNotifyEleve(true); setNotifyParent(true); setWhatsappNumber(""); setNotificationSent(false);
+    setNotifyEleve(true); setNotifyParent(true); setWhatsappNumber(""); setSmsNumber(""); setNotificationSent(false); setSmsSent(false);
     onClose();
   };
 
