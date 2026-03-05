@@ -236,29 +236,45 @@ export default function DeclareEventModal({ open, onClose, schedule, subject, te
               {(notifyEleve || notifyParent) && (
                 <>
                   <div>
-                    <Label className="text-xs">Numéro WhatsApp (optionnel)</Label>
+                    <Label className="text-xs">Numéro de téléphone (optionnel)</Label>
                     <Input
                       value={whatsappNumber}
-                      onChange={e => setWhatsappNumber(e.target.value)}
+                      onChange={e => { setWhatsappNumber(e.target.value); setSmsNumber(e.target.value); }}
                       placeholder="Ex: 33612345678 (laisser vide pour choisir)"
                       className="mt-1 text-xs"
                     />
                     <p className="text-[10px] text-slate-500 mt-1">Sans indicatif + (ex: 33 pour France, 216 pour Tunisie)</p>
                   </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="w-full border-green-300 text-green-700 hover:bg-green-100 gap-2"
-                    onClick={handleSendWhatsApp}
-                    disabled={!eventType || !eventDate}
-                  >
-                    {notificationSent ? (
-                      <><CheckCircle2 className="w-4 h-4 text-green-600" /> Notification envoyée ✓</>
-                    ) : (
-                      <><MessageCircle className="w-4 h-4" /> Envoyer via WhatsApp</>
-                    )}
-                  </Button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="border-green-300 text-green-700 hover:bg-green-100 gap-1.5"
+                      onClick={handleSendWhatsApp}
+                      disabled={!eventType || !eventDate}
+                    >
+                      {notificationSent ? (
+                        <><CheckCircle2 className="w-3.5 h-3.5 text-green-600" /> WhatsApp ✓</>
+                      ) : (
+                        <><MessageCircle className="w-3.5 h-3.5" /> WhatsApp</>
+                      )}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="border-blue-300 text-blue-700 hover:bg-blue-50 gap-1.5"
+                      onClick={handleSendSMS}
+                      disabled={!eventType || !eventDate}
+                    >
+                      {smsSent ? (
+                        <><CheckCircle2 className="w-3.5 h-3.5 text-blue-600" /> SMS ✓</>
+                      ) : (
+                        <><Smartphone className="w-3.5 h-3.5" /> SMS</>
+                      )}
+                    </Button>
+                  </div>
                 </>
               )}
             </div>
