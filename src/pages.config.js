@@ -62,6 +62,7 @@ import Homework from './pages/Homework';
 import Messages from './pages/Messages';
 import MobileSaisie from './pages/MobileSaisie';
 import Pilotage from './pages/Pilotage';
+import ProjectsScrum from './pages/ProjectsScrum';
 import Resources from './pages/Resources';
 import RoleSelect from './pages/RoleSelect';
 import Sanctions from './pages/Sanctions';
@@ -73,7 +74,6 @@ import StudentDetail from './pages/StudentDetail';
 import Students from './pages/Students';
 import Subjects from './pages/Subjects';
 import Teachers from './pages/Teachers';
-import ProjectsScrum from './pages/ProjectsScrum';
 import __Layout from './Layout.jsx';
 
 
@@ -93,6 +93,7 @@ export const PAGES = {
     "Messages": Messages,
     "MobileSaisie": MobileSaisie,
     "Pilotage": Pilotage,
+    "ProjectsScrum": ProjectsScrum,
     "Resources": Resources,
     "RoleSelect": RoleSelect,
     "Sanctions": Sanctions,
@@ -104,7 +105,6 @@ export const PAGES = {
     "Students": Students,
     "Subjects": Subjects,
     "Teachers": Teachers,
-    "ProjectsScrum": ProjectsScrum,
 }
 
 export const pagesConfig = {

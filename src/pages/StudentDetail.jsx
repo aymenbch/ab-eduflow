@@ -10,6 +10,7 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import StudentIDCard from "@/components/students/StudentIDCard";
 
 export default function StudentDetail() {
   const urlParams = new URLSearchParams(window.location.search);
