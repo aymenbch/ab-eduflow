@@ -22,6 +22,43 @@ const EVENT_TYPES = [
   { value: "autre",              label: "📌 Autre",                  color: "bg-gray-100 text-gray-700" },
 ];
 
+const EVENT_TYPE_LABELS = {
+  cours_annule: "Cours annulé",
+  cours_reporte: "Cours reporté",
+  prof_absent: "Professeur absent",
+  salle_indisponible: "Salle indisponible",
+  force_majeure: "Force majeure",
+  greve: "Grève",
+  sortie_scolaire: "Sortie scolaire",
+  rattrappage: "Cours de rattrapage",
+  autre: "Autre",
+};
+
+function buildWhatsAppMessage({ eventType, eventDate, subject, teacher, schedule, description, replacementDate, replacementTime, replacementRoom }) {
+  const dateFormatted = eventDate ? new Date(eventDate).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) : "";
+  const typeLabel = EVENT_TYPE_LABELS[eventType] || eventType;
+  const subjectName = subject?.name || "Cours";
+  const teacherName = teacher ? `${teacher.first_name} ${teacher.last_name}` : "";
+  const time = schedule ? `${schedule.start_time} – ${schedule.end_time}` : "";
+
+  let msg = `📢 *Information importante – EduGest*\n\n`;
+  msg += `⚠️ *${typeLabel.toUpperCase()}*\n\n`;
+  msg += `📚 Matière : *${subjectName}*\n`;
+  if (teacherName) msg += `👨‍🏫 Enseignant : ${teacherName}\n`;
+  msg += `📅 Date : ${dateFormatted}\n`;
+  if (time) msg += `🕐 Horaire : ${time}\n`;
+  if (description) msg += `📝 Détail : ${description}\n`;
+  if (replacementDate) {
+    const repDate = new Date(replacementDate).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+    msg += `\n🔄 *Cours reporté au :* ${repDate}`;
+    if (replacementTime) msg += ` à ${replacementTime}`;
+    if (replacementRoom) msg += ` (salle ${replacementRoom})`;
+    msg += "\n";
+  }
+  msg += `\nMerci de votre compréhension. — EduGest`;
+  return msg;
+}
+
 export default function DeclareEventModal({ open, onClose, schedule, subject, teacher, currentRole }) {
   const [eventType, setEventType] = useState("");
   const [eventDate, setEventDate] = useState(new Date().toISOString().split("T")[0]);
@@ -29,6 +66,10 @@ export default function DeclareEventModal({ open, onClose, schedule, subject, te
   const [replacementDate, setReplacementDate] = useState("");
   const [replacementTime, setReplacementTime] = useState("");
   const [replacementRoom, setReplacementRoom] = useState("");
+  const [notifyEleve, setNotifyEleve] = useState(true);
+  const [notifyParent, setNotifyParent] = useState(true);
+  const [whatsappNumber, setWhatsappNumber] = useState("");
+  const [notificationSent, setNotificationSent] = useState(false);
   const qc = useQueryClient();
 
   const mutation = useMutation({
@@ -43,7 +84,19 @@ export default function DeclareEventModal({ open, onClose, schedule, subject, te
   const handleClose = () => {
     setEventType(""); setEventDate(new Date().toISOString().split("T")[0]);
     setDescription(""); setReplacementDate(""); setReplacementTime(""); setReplacementRoom("");
+    setNotifyEleve(true); setNotifyParent(true); setWhatsappNumber(""); setNotificationSent(false);
     onClose();
+  };
+
+  const handleSendWhatsApp = () => {
+    const msg = buildWhatsAppMessage({ eventType, eventDate, subject, teacher, schedule, description, replacementDate, replacementTime, replacementRoom });
+    const encoded = encodeURIComponent(msg);
+    // If a specific number is provided, use it; otherwise open WhatsApp without a number (user selects contact)
+    const number = whatsappNumber.replace(/\D/g, "");
+    const url = number ? `https://wa.me/${number}?text=${encoded}` : `https://wa.me/?text=${encoded}`;
+    window.open(url, "_blank");
+    setNotificationSent(true);
+    toast.success("WhatsApp ouvert pour l'envoi de la notification");
   };
 
   const handleSubmit = () => {
@@ -63,6 +116,7 @@ export default function DeclareEventModal({ open, onClose, schedule, subject, te
       replacement_date: replacementDate || undefined,
       replacement_time: replacementTime || undefined,
       replacement_room: replacementRoom || undefined,
+      notified_parents: notificationSent,
       status: "active",
     });
   };
