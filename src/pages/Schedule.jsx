@@ -219,11 +219,12 @@ export default function Schedule() {
                           {schedule ? (
                             <>
                               {event && (
-                                <div className={`absolute top-0 left-0 right-0 rounded-t-lg px-1 py-0.5 text-white text-[10px] font-bold ${eventInfo?.color || "bg-red-500"}`}>
-                                  ⚠ {eventInfo?.label}
+                                <div className="mb-1 flex items-center gap-1">
+                                  <span className="text-[10px] font-bold text-orange-300">⚠</span>
+                                  <span className="text-[10px] font-bold text-orange-300 uppercase tracking-wide">{eventInfo?.label}</span>
                                 </div>
                               )}
-                              <div className={event ? "mt-4" : ""}>
+                              <div>
                                 <p className="font-semibold truncate">{subject?.name}</p>
                                 <p className="opacity-80">{teacher?.first_name} {teacher?.last_name?.[0]}.</p>
                                 {schedule.room && <p className="opacity-70">Salle {schedule.room}</p>}
