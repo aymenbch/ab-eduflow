@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
-import { AlertTriangle, Calendar, MessageCircle, Users, CheckCircle2 } from "lucide-react";
+import { AlertTriangle, Calendar, MessageCircle, Users, CheckCircle2, Smartphone } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 
 const EVENT_TYPES = [
