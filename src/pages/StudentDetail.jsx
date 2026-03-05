@@ -105,6 +105,14 @@ export default function StudentDetail() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Student ID Card */}
+        <Card>
+          <CardContent className="p-6">
+            <h3 className="font-bold text-slate-900 mb-4 text-center">Carte Étudiant</h3>
+            <StudentIDCard student={student} studentClass={studentClass} />
+          </CardContent>
+        </Card>
+
         {/* Profile Card */}
         <Card>
           <CardContent className="p-6">
