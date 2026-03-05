@@ -196,6 +196,61 @@ export default function DeclareEventModal({ open, onClose, schedule, subject, te
             <Label>Commentaire / Détail</Label>
             <Input value={description} onChange={e => setDescription(e.target.value)} placeholder="Précisions supplémentaires..." className="mt-1" />
           </div>
+
+          {/* WhatsApp notification section */}
+          {eventType && (
+            <div className="border border-green-200 bg-green-50 rounded-lg p-3 space-y-3">
+              <p className="text-xs font-semibold text-green-700 flex items-center gap-2">
+                <MessageCircle className="w-4 h-4" />
+                Notification WhatsApp
+              </p>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Users className="w-3.5 h-3.5 text-green-600" />
+                  <Label className="text-xs cursor-pointer">Notifier les élèves</Label>
+                </div>
+                <Switch checked={notifyEleve} onCheckedChange={setNotifyEleve} />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Users className="w-3.5 h-3.5 text-green-600" />
+                  <Label className="text-xs cursor-pointer">Notifier les parents</Label>
+                </div>
+                <Switch checked={notifyParent} onCheckedChange={setNotifyParent} />
+              </div>
+
+              {(notifyEleve || notifyParent) && (
+                <>
+                  <div>
+                    <Label className="text-xs">Numéro WhatsApp (optionnel)</Label>
+                    <Input
+                      value={whatsappNumber}
+                      onChange={e => setWhatsappNumber(e.target.value)}
+                      placeholder="Ex: 33612345678 (laisser vide pour choisir)"
+                      className="mt-1 text-xs"
+                    />
+                    <p className="text-[10px] text-slate-500 mt-1">Sans indicatif + (ex: 33 pour France, 216 pour Tunisie)</p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full border-green-300 text-green-700 hover:bg-green-100 gap-2"
+                    onClick={handleSendWhatsApp}
+                    disabled={!eventType || !eventDate}
+                  >
+                    {notificationSent ? (
+                      <><CheckCircle2 className="w-4 h-4 text-green-600" /> Notification envoyée ✓</>
+                    ) : (
+                      <><MessageCircle className="w-4 h-4" /> Envoyer via WhatsApp</>
+                    )}
+                  </Button>
+                </>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="flex gap-2 mt-4">
