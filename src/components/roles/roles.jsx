@@ -88,7 +88,7 @@ export const ROLES = {
     bgColor: "bg-pink-100",
     icon: "🎒",
     description: "Mes cours, notes, devoirs et planning",
-    pages: ["Dashboard", "Schedule", "Grades", "Homework", "Resources", "Attendance", "Messages", "Events"],
+    pages: ["Dashboard", "Schedule", "Grades", "Homework", "Resources", "Attendance", "Messages", "Events", "SocialNetwork"],
   },
   parent: {
     label: "Parent",
@@ -97,7 +97,7 @@ export const ROLES = {
     bgColor: "bg-amber-100",
     icon: "👨‍👩‍👧",
     description: "Suivi scolaire de mon enfant",
-    pages: ["Dashboard", "EspaceParent", "Pilotage", "Grades", "Attendance", "Homework", "Sanctions", "Messages", "Events"],
+    pages: ["Dashboard", "EspaceParent", "Pilotage", "Grades", "Attendance", "Homework", "Sanctions", "Messages", "Events", "SocialNetwork"],
   },
 };
 
