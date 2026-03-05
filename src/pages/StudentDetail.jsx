@@ -188,7 +188,7 @@ export default function StudentDetail() {
         </Card>
 
         {/* Stats and tabs */}
-        <div className="lg:col-span-1 space-y-6">
+        <div className="lg:col-span-2 space-y-6">
           {/* Quick stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Card>
