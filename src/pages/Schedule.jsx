@@ -214,7 +214,7 @@ export default function Schedule() {
                             schedule ? "text-white" : "bg-slate-50 hover:bg-slate-100",
                             event ? "opacity-80" : ""
                           )}
-                          style={{ backgroundColor: schedule && !event ? (subject?.color || "#3B82F6") : schedule && event ? "#9ca3af" : undefined }}
+                          style={{ backgroundColor: schedule ? (event ? "#111827" : (subject?.color || "#3B82F6")) : undefined }}
                         >
                           {schedule ? (
                             <>
