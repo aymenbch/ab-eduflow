@@ -69,7 +69,9 @@ export default function DeclareEventModal({ open, onClose, schedule, subject, te
   const [notifyEleve, setNotifyEleve] = useState(true);
   const [notifyParent, setNotifyParent] = useState(true);
   const [whatsappNumber, setWhatsappNumber] = useState("");
+  const [smsNumber, setSmsNumber] = useState("");
   const [notificationSent, setNotificationSent] = useState(false);
+  const [smsSent, setSmsSent] = useState(false);
   const qc = useQueryClient();
 
   const mutation = useMutation({
