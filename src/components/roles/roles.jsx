@@ -52,7 +52,7 @@ export const ROLES = {
     bgColor: "bg-orange-100",
     icon: "👮",
     description: "Vie scolaire, discipline et présences",
-    pages: ["Dashboard", "Students", "Attendance", "Sanctions", "Messages", "Events", "Pilotage"],
+    pages: ["Dashboard", "Students", "Attendance", "Sanctions", "Messages", "Events", "Pilotage", "SocialNetwork"],
   },
   enseignant: {
     label: "Enseignant",
@@ -61,7 +61,7 @@ export const ROLES = {
     bgColor: "bg-green-100",
     icon: "📚",
     description: "Cours, notes, devoirs et ressources",
-    pages: ["Dashboard", "Students", "Classes", "Schedule", "Exams", "Grades", "Homework", "Resources", "Attendance", "Messages", "MobileSaisie", "Pilotage"],
+    pages: ["Dashboard", "Students", "Classes", "Schedule", "Exams", "Grades", "Homework", "Resources", "Attendance", "Messages", "MobileSaisie", "Pilotage", "SocialNetwork"],
   },
   secretaire: {
     label: "Secrétaire",
