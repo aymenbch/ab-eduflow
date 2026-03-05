@@ -65,6 +65,7 @@ const ALL_NAVIGATION = [
   { name: "Espace Parents Premium", href: "EspaceParent", icon: Star },
   { name: "Pilotage & Performance", href: "Pilotage", icon: TrendingUp },
   { name: "Projets Agile / Scrum", href: "ProjectsScrum", icon: BarChart2 },
+  { name: "Réseau Social Éducatif", href: "SocialNetwork", icon: Network },
 ];
 
 const ADMIN_NAV = [

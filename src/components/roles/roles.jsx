@@ -25,7 +25,7 @@ export const ROLES = {
     bgColor: "bg-blue-100",
     icon: "🏫",
     description: "Gestion du cycle primaire",
-    pages: ["Dashboard", "Students", "Teachers", "Classes", "Subjects", "Schedule", "Exams", "Grades", "Attendance", "Sanctions", "Messages", "Events", "Finance", "Bulletins", "Pilotage", "ProjectsScrum"],
+    pages: ["Dashboard", "Students", "Teachers", "Classes", "Subjects", "Schedule", "Exams", "Grades", "Attendance", "Sanctions", "Messages", "Events", "Finance", "Bulletins", "Pilotage", "ProjectsScrum", "SocialNetwork"],
   },
   directeur_college: {
     label: "Directeur du Collège",
