@@ -67,7 +67,8 @@ const ALL_NAVIGATION = [
   { name: "Pilotage & Performance", href: "Pilotage", icon: TrendingUp },
   { name: "Projets Agile / Scrum", href: "ProjectsScrum", icon: BarChart2 },
   { name: "Réseau Social Éducatif", href: "SocialNetwork", icon: Network },
-  { name: "Affectation Intelligente", href: "Affectation", icon: Users },
+  { name: "Affectation Enseignants", href: "Affectation", icon: Users },
+  { name: "Affectation Élèves", href: "AffectationEleves", icon: GraduationCap },
 ];
 
 const ADMIN_NAV = [
