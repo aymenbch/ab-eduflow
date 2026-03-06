@@ -43,7 +43,7 @@ export const ROLES = {
     bgColor: "bg-violet-100",
     icon: "🏛️",
     description: "Gestion du cycle lycée",
-    pages: ["Dashboard", "Students", "Teachers", "Classes", "Subjects", "Schedule", "Exams", "Grades", "Attendance", "Sanctions", "Messages", "Events", "Finance", "Bulletins", "Pilotage", "ProjectsScrum", "SocialNetwork", "Affectation"],
+    pages: ["Dashboard", "Students", "Teachers", "Classes", "Subjects", "Schedule", "Exams", "Grades", "Attendance", "Sanctions", "Messages", "Events", "Finance", "Bulletins", "Pilotage", "ProjectsScrum", "SocialNetwork", "Affectation", "AffectationEleves"],
   },
   cpe: {
     label: "CPE",
