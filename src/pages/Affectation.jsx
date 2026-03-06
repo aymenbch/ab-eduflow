@@ -271,6 +271,7 @@ export default function Affectation() {
         subjects={subjects}
         classes={classes}
         assignments={assignments}
+        onApplyAssignments={setAssignments}
       />
 
       {/* Filters */}
