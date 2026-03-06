@@ -47,6 +47,7 @@ import {
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Link } from "react-router-dom";
+import { useTeacherProfile } from "@/components/teachers/useTeacherProfile";
 import { createPageUrl } from "@/utils";
 
 const EXAM_TYPES = {

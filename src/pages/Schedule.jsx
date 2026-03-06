@@ -55,6 +55,7 @@ export default function Schedule() {
 
   const currentRole = localStorage.getItem("edugest_role");
   const canDeclare = CAN_DECLARE_ROLES.includes(currentRole);
+  const { mySubjectIds, isTeacherRole } = useTeacherProfile();
   const queryClient = useQueryClient();
 
   const weekStart = startOfWeek(currentWeek, { weekStartsOn: 1 });
@@ -71,7 +72,12 @@ export default function Schedule() {
   const subjectMap = Object.fromEntries(subjects.map(s => [s.id, s]));
   const teacherMap = Object.fromEntries(teachers.map(t => [t.id, t]));
 
-  const filteredSchedules = selectedClass ? schedules.filter(s => s.class_id === selectedClass) : [];
+  const filteredSchedules = selectedClass
+    ? schedules.filter(s => {
+        if (!isTeacherRole) return s.class_id === selectedClass;
+        return s.class_id === selectedClass && mySubjectIds.includes(s.subject_id);
+      })
+    : [];
 
   const getScheduleForSlot = (day, hour) =>
     filteredSchedules.find(s => s.day_of_week === day && s.start_time === hour);

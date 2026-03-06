@@ -39,6 +39,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { format, isPast, isToday } from "date-fns";
+import { useTeacherProfile } from "@/components/teachers/useTeacherProfile";
 import { fr } from "date-fns/locale";
 
 export default function Homework() {
