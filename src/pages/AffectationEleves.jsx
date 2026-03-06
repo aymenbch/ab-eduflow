@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Users, CheckCircle, AlertTriangle, Save, Loader2, Filter,
-  Search, X, Info, BarChart2, GraduationCap
+  Search, X, Info, BarChart2, GraduationCap, UserX
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
