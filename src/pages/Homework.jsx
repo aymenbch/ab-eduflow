@@ -63,10 +63,14 @@ export default function Homework() {
   const queryClient = useQueryClient();
   const { mySubjectIds, isTeacherRole } = useTeacherProfile();
 
-  const { data: homework = [], isLoading } = useQuery({
+  const { data: homeworkAll = [], isLoading } = useQuery({
     queryKey: ["homework"],
     queryFn: () => base44.entities.Homework.list("-due_date"),
   });
+
+  const homework = isTeacherRole && mySubjectIds.length > 0
+    ? homeworkAll.filter(h => mySubjectIds.includes(h.subject_id))
+    : homeworkAll;
 
   const { data: classes = [] } = useQuery({
     queryKey: ["classes"],
@@ -328,7 +332,7 @@ export default function Homework() {
                     <SelectValue placeholder="Sélectionner" />
                   </SelectTrigger>
                   <SelectContent>
-                    {subjects.map((s) => (
+                    {availableSubjects.map((s) => (
                       <SelectItem key={s.id} value={s.id}>
                         {s.name}
                       </SelectItem>

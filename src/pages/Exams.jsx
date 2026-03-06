@@ -80,10 +80,14 @@ export default function Exams() {
   const queryClient = useQueryClient();
   const { mySubjectIds, isTeacherRole, teacherProfile } = useTeacherProfile();
 
-  const { data: exams = [], isLoading } = useQuery({
+  const { data: examsAll = [], isLoading } = useQuery({
     queryKey: ["exams"],
     queryFn: () => base44.entities.Exam.list("-date"),
   });
+
+  const exams = isTeacherRole && mySubjectIds.length > 0
+    ? examsAll.filter(e => mySubjectIds.includes(e.subject_id))
+    : examsAll;
 
   const { data: classes = [] } = useQuery({
     queryKey: ["classes"],
@@ -328,7 +332,7 @@ export default function Exams() {
                     <SelectValue placeholder="Sélectionner" />
                   </SelectTrigger>
                   <SelectContent>
-                    {subjects.map((s) => (
+                    {availableSubjects.map((s) => (
                       <SelectItem key={s.id} value={s.id}>
                         {s.name}
                       </SelectItem>
