@@ -20,14 +20,26 @@ export default function AffectationTable({
 
   const getTeacherById = (id) => teachers.find(t => t.id === id);
 
-  // Build column structure: [ {type, levels: [{level, classes:[cls]}]} ]
   const columns = Object.entries(tableData).map(([type, levelsObj]) => ({
     type,
     levels: Object.entries(levelsObj).map(([level, classes]) => ({ level, classes })),
   }));
 
-  // Total columns count (all classes across all types/levels)
   const allClasses = columns.flatMap(t => t.levels.flatMap(l => l.classes));
+
+  const typeColors = {
+    "École": "bg-green-600",
+    "Collège": "bg-blue-600",
+    "Lycée": "bg-purple-600",
+    "Autre": "bg-slate-600",
+  };
+
+  const levelColors = {
+    "École": "bg-green-50 text-green-800",
+    "Collège": "bg-blue-50 text-blue-800",
+    "Lycée": "bg-purple-50 text-purple-800",
+    "Autre": "bg-slate-50 text-slate-800",
+  };
 
   if (allClasses.length === 0) {
     return (
@@ -45,20 +57,6 @@ export default function AffectationTable({
     );
   }
 
-  const typeColors = {
-    "École": "bg-green-600",
-    "Collège": "bg-blue-600",
-    "Lycée": "bg-purple-600",
-    "Autre": "bg-slate-600",
-  };
-
-  const levelColors = {
-    "École": "bg-green-50 text-green-800 border-green-200",
-    "Collège": "bg-blue-50 text-blue-800 border-blue-200",
-    "Lycée": "bg-purple-50 text-purple-800 border-purple-200",
-    "Autre": "bg-slate-50 text-slate-800 border-slate-200",
-  };
-
   return (
     <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
       <div className="px-5 py-3 bg-gradient-to-r from-blue-600 to-indigo-700 text-white">
@@ -69,9 +67,8 @@ export default function AffectationTable({
       <div className="overflow-x-auto">
         <table className="border-collapse w-full min-w-[500px]">
           <thead>
-            {/* Row 1: Type (École / Collège / Lycée) */}
+            {/* Row 1: Type */}
             <tr>
-              {/* Matière column header — spans 3 header rows */}
               <th
                 rowSpan={3}
                 className="border border-slate-300 bg-slate-100 text-slate-700 text-sm font-bold px-4 py-3 text-left align-middle min-w-[140px] sticky left-0 z-10"
@@ -92,7 +89,7 @@ export default function AffectationTable({
               })}
             </tr>
 
-            {/* Row 2: Niveau scolaire */}
+            {/* Row 2: Niveau */}
             <tr>
               {columns.map(({ type, levels }) =>
                 levels.map(({ level, classes }) => (
@@ -127,7 +124,6 @@ export default function AffectationTable({
           <tbody>
             {subjects.map(subject => (
               <tr key={subject.id} className="hover:bg-slate-50/40 transition-colors">
-                {/* Subject label */}
                 <td className="border border-slate-200 px-3 py-2 sticky left-0 bg-white z-10 min-w-[140px]">
                   <div className="flex items-center gap-2">
                     {subject.color && (
@@ -140,7 +136,6 @@ export default function AffectationTable({
                   </div>
                 </td>
 
-                {/* Cells per class */}
                 {columns.map(({ type, levels }) =>
                   levels.map(({ classes }) =>
                     classes.map(cls => {
@@ -175,7 +170,6 @@ export default function AffectationTable({
                             {assigned.map(tid => {
                               const teacher = getTeacherById(tid);
                               if (!teacher) return null;
-                              const subjectName = subject.name;
                               return (
                                 <div
                                   key={tid}
@@ -185,7 +179,7 @@ export default function AffectationTable({
                                     <p className="text-[11px] text-blue-900 font-semibold leading-tight truncate">
                                       {teacher.first_name} {teacher.last_name}
                                     </p>
-                                    <p className="text-[10px] text-blue-500 truncate">{subjectName}</p>
+                                    <p className="text-[10px] text-blue-500 truncate">{subject.name}</p>
                                   </div>
                                   <button
                                     onClick={() => onRemove(subject.id, cls.id, tid)}
