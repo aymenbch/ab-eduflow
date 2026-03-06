@@ -60,6 +60,7 @@ export default function Homework() {
   });
 
   const queryClient = useQueryClient();
+  const { mySubjectIds, isTeacherRole } = useTeacherProfile();
 
   const { data: homework = [], isLoading } = useQuery({
     queryKey: ["homework"],

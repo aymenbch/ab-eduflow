@@ -77,6 +77,7 @@ export default function Exams() {
   });
 
   const queryClient = useQueryClient();
+  const { mySubjectIds, isTeacherRole, teacherProfile } = useTeacherProfile();
 
   const { data: exams = [], isLoading } = useQuery({
     queryKey: ["exams"],
