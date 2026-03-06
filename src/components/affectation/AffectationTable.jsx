@@ -41,6 +41,38 @@ export default function AffectationTable({
     "Autre": "bg-slate-50 text-slate-800",
   };
 
+  // Color palette per level name
+  const levelPalette = {
+    "CP":        { header: "bg-emerald-100 text-emerald-800", cell: "bg-emerald-50/40" },
+    "CE1":       { header: "bg-green-100 text-green-800",     cell: "bg-green-50/40" },
+    "CE2":       { header: "bg-teal-100 text-teal-800",       cell: "bg-teal-50/40" },
+    "CM1":       { header: "bg-lime-100 text-lime-800",       cell: "bg-lime-50/40" },
+    "CM2":       { header: "bg-cyan-100 text-cyan-800",       cell: "bg-cyan-50/40" },
+    "6ème":      { header: "bg-blue-100 text-blue-800",       cell: "bg-blue-50/40" },
+    "5ème":      { header: "bg-sky-100 text-sky-800",         cell: "bg-sky-50/40" },
+    "4ème":      { header: "bg-indigo-100 text-indigo-800",   cell: "bg-indigo-50/40" },
+    "3ème":      { header: "bg-violet-100 text-violet-800",   cell: "bg-violet-50/40" },
+    "2nde":      { header: "bg-purple-100 text-purple-800",   cell: "bg-purple-50/40" },
+    "1ère":      { header: "bg-fuchsia-100 text-fuchsia-800", cell: "bg-fuchsia-50/40" },
+    "Terminale": { header: "bg-rose-100 text-rose-800",       cell: "bg-rose-50/40" },
+  };
+
+  // Color palette cycling for individual classes within a level
+  const classPaletteColors = [
+    "bg-blue-100 text-blue-900",
+    "bg-indigo-100 text-indigo-900",
+    "bg-violet-100 text-violet-900",
+    "bg-purple-100 text-purple-900",
+    "bg-fuchsia-100 text-fuchsia-900",
+    "bg-pink-100 text-pink-900",
+    "bg-rose-100 text-rose-900",
+    "bg-orange-100 text-orange-900",
+    "bg-amber-100 text-amber-900",
+    "bg-yellow-100 text-yellow-900",
+    "bg-lime-100 text-lime-900",
+    "bg-green-100 text-green-900",
+  ];
+
   if (allClasses.length === 0) {
     return (
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-12 text-center text-slate-400 text-sm">
