@@ -42,6 +42,7 @@ import { base44 } from "@/api/base44Client";
 import { ROLES } from "@/components/roles/roles";
 import AIChatbot from "@/components/chatbot/AIChatbot";
 import MobileBottomNav from "@/components/layout/MobileBottomNav";
+import WelcomeBanner from "@/components/layout/WelcomeBanner";
 
 const ALL_NAVIGATION = [
   { name: "Tableau de bord", href: "Dashboard", icon: LayoutDashboard },
