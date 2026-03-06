@@ -16,7 +16,7 @@ export const ROLES = {
     bgColor: "bg-slate-100",
     icon: "👑",
     description: "Accès complet à tous les modules",
-    pages: ["Dashboard", "Students", "Teachers", "Classes", "Subjects", "Staff", "Schedule", "Exams", "Grades", "Homework", "Resources", "Attendance", "Sanctions", "Messages", "Events", "Finance", "Bulletins", "SchoolYearManager", "MobileSaisie", "Pilotage", "ProjectsScrum", "SocialNetwork"],
+    pages: ["Dashboard", "Students", "Teachers", "Classes", "Subjects", "Staff", "Schedule", "Exams", "Grades", "Homework", "Resources", "Attendance", "Sanctions", "Messages", "Events", "Finance", "Bulletins", "SchoolYearManager", "MobileSaisie", "Pilotage", "ProjectsScrum", "SocialNetwork", "Affectation"],
   },
   directeur_primaire: {
     label: "Directeur du Primaire",
