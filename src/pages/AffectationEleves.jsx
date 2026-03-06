@@ -313,6 +313,43 @@ export default function AffectationEleves() {
               {unassignedStudents.length} non affectés
             </Badge>
           )}
+          {/* Unassign button with level selector */}
+          <div className="flex items-center gap-1.5">
+            <Select value={unassignLevel} onValueChange={setUnassignLevel}>
+              <SelectTrigger className="h-8 w-40 text-xs border-red-200 text-red-700">
+                <SelectValue placeholder="Tous les niveaux" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous les niveaux</SelectItem>
+                {availableLevels.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button size="sm" variant="outline" className="border-red-300 text-red-600 hover:bg-red-50 gap-2">
+                  <UserX className="w-3.5 h-3.5" />
+                  Désaffecter
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Désaffecter les élèves</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {unassignLevel === "all"
+                      ? "Tous les élèves de toutes les classes seront désaffectés. Cette action est réversible avant d'enregistrer."
+                      : `Tous les élèves du niveau "${unassignLevel}" seront désaffectés. Cette action est réversible avant d'enregistrer.`}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleUnassignAll} className="bg-red-600 hover:bg-red-700">
+                    Désaffecter
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+
           <Button onClick={handleSave} disabled={saving} size="sm" className="bg-green-600 hover:bg-green-700 gap-2">
             {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
             Enregistrer
