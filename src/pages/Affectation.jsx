@@ -129,6 +129,38 @@ export default function Affectation() {
     setDraggedTeacher(null);
   };
 
+  const handleSave = async () => {
+    setSaving(true);
+    // Save assignments as schedules: one schedule record per (subject, class, teacher)
+    const toCreate = [];
+    Object.entries(assignments).forEach(([key, teacherIds]) => {
+      const [subjectId, classId] = key.split("|");
+      teacherIds.forEach(teacherId => {
+        // Only create if not already in schedules
+        const exists = schedules.some(
+          s => s.subject_id === subjectId && s.class_id === classId && s.teacher_id === teacherId
+        );
+        if (!exists) {
+          toCreate.push({
+            subject_id: subjectId,
+            class_id: classId,
+            teacher_id: teacherId,
+            day_of_week: "Lundi",
+            start_time: "08:00",
+            end_time: "09:00",
+          });
+        }
+      });
+    });
+    if (toCreate.length > 0) {
+      await base44.entities.Schedule.bulkCreate(toCreate);
+      queryClient.invalidateQueries({ queryKey: ["schedules"] });
+    }
+    setSaving(false);
+    setNotification({ type: "success", message: `Affectations enregistrées avec succès ! (${toCreate.length} nouvelles)` });
+    setTimeout(() => setNotification(null), 4000);
+  };
+
   const activeTeachers = teachers.filter(t => t.status === "active" || !t.status);
 
   // Build available filter options
