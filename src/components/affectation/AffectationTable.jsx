@@ -124,15 +124,18 @@ export default function AffectationTable({
             {/* Row 2: Niveau */}
             <tr>
               {columns.map(({ type, levels }) =>
-                levels.map(({ level, classes }) => (
-                  <th
-                    key={`${type}-${level}`}
-                    colSpan={classes.length}
-                    className={`border border-slate-300 text-xs font-semibold px-2 py-2 text-center ${levelColors[type] || "bg-slate-50 text-slate-700"}`}
-                  >
-                    {level}
-                  </th>
-                ))
+                levels.map(({ level, classes }) => {
+                  const palette = levelPalette[level] || { header: "bg-slate-100 text-slate-700" };
+                  return (
+                    <th
+                      key={`${type}-${level}`}
+                      colSpan={classes.length}
+                      className={`border border-slate-300 text-xs font-semibold px-2 py-2 text-center ${palette.header}`}
+                    >
+                      {level}
+                    </th>
+                  );
+                })
               )}
             </tr>
 
@@ -140,14 +143,17 @@ export default function AffectationTable({
             <tr>
               {columns.map(({ type, levels }) =>
                 levels.map(({ level, classes }) =>
-                  classes.map(cls => (
-                    <th
-                      key={cls.id}
-                      className="border border-slate-300 bg-slate-50 text-xs font-medium text-slate-600 px-2 py-2 text-center whitespace-nowrap min-w-[110px]"
-                    >
-                      {cls.name}
-                    </th>
-                  ))
+                  classes.map((cls, idx) => {
+                    const color = classPaletteColors[idx % classPaletteColors.length];
+                    return (
+                      <th
+                        key={cls.id}
+                        className={`border border-slate-300 text-xs font-medium px-2 py-2 text-center whitespace-nowrap min-w-[110px] ${color}`}
+                      >
+                        {cls.name}
+                      </th>
+                    );
+                  })
                 )
               )}
             </tr>
