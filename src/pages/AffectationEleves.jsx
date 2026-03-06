@@ -236,6 +236,23 @@ export default function AffectationEleves() {
     notify("success", "Élève retiré de la classe.");
   };
 
+  const handleUnassignAll = () => {
+    if (unassignLevel === "all") {
+      // Remove all assignments
+      setStudentAssignments({});
+      notify("success", "Tous les élèves ont été désaffectés.");
+    } else {
+      // Remove only students in classes matching the selected level
+      const classIdsForLevel = classes.filter(c => c.level === unassignLevel).map(c => c.id);
+      setStudentAssignments(prev => {
+        const newMap = { ...prev };
+        classIdsForLevel.forEach(cid => { newMap[cid] = []; });
+        return newMap;
+      });
+      notify("success", `Tous les élèves du niveau "${unassignLevel}" ont été désaffectés.`);
+    }
+  };
+
   const handleSave = async () => {
     setSaving(true);
     const updates = [];
