@@ -59,6 +59,11 @@ export default function Affectation() {
     queryFn: () => base44.entities.Schedule.list(),
   });
 
+  const { data: schoolYears = [] } = useQuery({
+    queryKey: ["schoolYears"],
+    queryFn: () => base44.entities.SchoolYear.list("-start_date"),
+  });
+
   // Compute teacher workload
   const teacherWorkload = useMemo(() => {
     const map = {};
