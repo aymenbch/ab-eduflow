@@ -4,9 +4,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Users, RefreshCw, CheckCircle, AlertTriangle, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import TeacherColumn from "@/components/affectation/TeacherColumn";
-import AssignmentGrid from "@/components/affectation/AssignmentGrid";
-import ChargeOverview from "@/components/affectation/ChargeOverview";
+import TeacherColumn from "@/components/affectation/TeacherColumn.jsx";
+import AssignmentGrid from "@/components/affectation/AssignmentGrid.jsx";
+import ChargeOverview from "@/components/affectation/ChargeOverview.jsx";
 
 const LEVELS = [
   { id: "Primaire", label: "Primaire", cycles: ["CP", "CE1", "CE2", "CM1", "CM2"], color: "bg-green-100 text-green-800 border-green-200" },
