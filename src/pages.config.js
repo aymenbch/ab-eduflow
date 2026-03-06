@@ -75,6 +75,7 @@ import StudentDetail from './pages/StudentDetail';
 import Students from './pages/Students';
 import Subjects from './pages/Subjects';
 import Teachers from './pages/Teachers';
+import Affectation from './pages/Affectation';
 import __Layout from './Layout.jsx';
 
 
@@ -107,6 +108,7 @@ export const PAGES = {
     "Students": Students,
     "Subjects": Subjects,
     "Teachers": Teachers,
+    "Affectation": Affectation,
 }
 
 export const pagesConfig = {
