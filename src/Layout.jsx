@@ -304,6 +304,9 @@ export default function Layout({ children, currentPageName }) {
         </header>
 
         <main className="p-4 lg:p-8 pb-24 lg:pb-8">
+          {currentRole && currentPageName !== "RoleSelect" && (
+            <WelcomeBanner currentRole={currentRole} />
+          )}
           {children}
         </main>
       </div>
