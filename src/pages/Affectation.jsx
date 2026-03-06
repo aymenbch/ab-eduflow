@@ -265,6 +265,14 @@ export default function Affectation() {
       {/* Overview */}
       <ChargeOverview teachers={activeTeachers} workload={teacherWorkload} />
 
+      {/* AI Assistant */}
+      <AIAssistant
+        teachers={activeTeachers}
+        subjects={subjects}
+        classes={classes}
+        assignments={assignments}
+      />
+
       {/* Filters */}
       <div className="bg-white border border-slate-200 rounded-xl px-4 py-3 flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-1.5 text-sm font-medium text-slate-600">
