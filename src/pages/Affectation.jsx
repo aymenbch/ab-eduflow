@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Users, CheckCircle, AlertTriangle, Info, Filter } from "lucide-react";
+import { Users, CheckCircle, AlertTriangle, Info, Filter, Save, CalendarDays, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import TeacherColumn from "@/components/affectation/TeacherColumn.jsx";
 import ChargeOverview from "@/components/affectation/ChargeOverview.jsx";
 import AffectationTable from "@/components/affectation/AffectationTable.jsx";
+import AIAssistant from "@/components/affectation/AIAssistant.jsx";
 
 const TYPE_LEVELS = {
   "École": ["CP", "CE1", "CE2", "CM1", "CM2"],
