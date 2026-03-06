@@ -81,6 +81,11 @@ export default function Homework() {
   const classMap = Object.fromEntries(classes.map((c) => [c.id, c]));
   const subjectMap = Object.fromEntries(subjects.map((s) => [s.id, s]));
 
+  // Filtrer les matières disponibles pour l'enseignant connecté
+  const availableSubjects = isTeacherRole
+    ? subjects.filter(s => mySubjectIds.includes(s.id))
+    : subjects;
+
   const handleNew = () => {
     setSelectedHomework(null);
     setFormData({

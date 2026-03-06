@@ -104,6 +104,11 @@ export default function Exams() {
   const subjectMap = Object.fromEntries(subjects.map((s) => [s.id, s]));
   const teacherMap = Object.fromEntries(teachers.map((t) => [t.id, t]));
 
+  // Filtrer les matières disponibles pour l'enseignant connecté
+  const availableSubjects = isTeacherRole
+    ? subjects.filter(s => mySubjectIds.includes(s.id))
+    : subjects;
+
   const handleNew = () => {
     setSelectedExam(null);
     setFormData({
