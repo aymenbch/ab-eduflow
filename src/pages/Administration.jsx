@@ -277,9 +277,6 @@ export default function Administration() {
 
   return (
     <div className="space-y-6">
-      {/* Welcome banner */}
-      <WelcomeBanner />
-
       {/* Header */}
       <div className="bg-gradient-to-r from-red-600 to-rose-700 rounded-2xl p-6 text-white">
         <div className="flex items-center justify-between">
