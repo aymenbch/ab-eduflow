@@ -30,6 +30,8 @@ export default function Affectation() {
   const [draggedTeacher, setDraggedTeacher] = useState(null);
   const [notification, setNotification] = useState(null);
   const [assignments, setAssignments] = useState({});
+  const [selectedSchoolYear, setSelectedSchoolYear] = useState("all");
+  const [saving, setSaving] = useState(false);
 
   // Filters
   const [filterType, setFilterType] = useState("all");
