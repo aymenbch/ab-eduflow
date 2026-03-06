@@ -178,6 +178,7 @@ export default function AffectationEleves() {
   const [filterGender, setFilterGender] = useState("all");
   const [filterNeed, setFilterNeed] = useState("all");
   const [filterLevel, setFilterLevel] = useState("all");
+  const [unassignLevel, setUnassignLevel] = useState("all");
 
   const { data: students = [] } = useQuery({
     queryKey: ["students"],
