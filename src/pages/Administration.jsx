@@ -23,41 +23,6 @@ import {
 import { ROLES, PAGE_LABELS } from "@/components/roles/roles";
 import InviteUserModal from "@/components/admin/InviteUserModal";
 import SystemConfigSection from "@/components/admin/SystemConfigSection";
-import { useEffect, useRef } from "react";
-
-function getGreeting() {
-  const h = new Date().getHours();
-  if (h >= 5 && h < 12) return { text: "Bonjour", emoji: "☀️" };
-  if (h >= 12 && h < 18) return { text: "Bon après-midi", emoji: "🌤️" };
-  if (h >= 18 && h < 22) return { text: "Bonsoir", emoji: "🌇" };
-  return { text: "Bonne nuit", emoji: "🌙" };
-}
-
-function WelcomeBanner() {
-  const [user, setUser] = React.useState(null);
-  const { text, emoji } = getGreeting();
-
-  useEffect(() => {
-    base44.auth.me().then(u => setUser(u)).catch(() => {});
-  }, []);
-
-  if (!user) return null;
-
-  return (
-    <div className="flex items-center gap-4 bg-white border border-slate-200 rounded-2xl px-5 py-4 shadow-sm">
-      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-rose-500 to-red-600 flex items-center justify-center text-2xl shadow-md flex-shrink-0">
-        🔐
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-slate-500 text-sm">{emoji} {text} !</p>
-        <p className="text-slate-900 font-bold text-lg truncate">
-          {user.full_name || user.email}
-        </p>
-        <p className="text-xs text-slate-400">Administrateur Système · {new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</p>
-      </div>
-    </div>
-  );
-}
 
 const STATUS_COLORS = {
   active: "bg-green-100 text-green-700 border-green-200",
