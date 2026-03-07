@@ -88,7 +88,7 @@ export const ROLES = {
     bgColor: "bg-pink-100",
     icon: "🎒",
     description: "Mes cours, notes, devoirs et planning",
-    pages: ["Dashboard", "Schedule", "Grades", "Homework", "Resources", "Attendance", "Messages", "Events", "SocialNetwork"],
+    pages: ["Dashboard", "StudentDashboard", "Schedule", "Homework", "Resources", "Messages", "Events", "SocialNetwork"],
   },
   parent: {
     label: "Parent",
