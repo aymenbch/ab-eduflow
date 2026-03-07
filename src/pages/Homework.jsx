@@ -230,6 +230,7 @@ export default function Homework() {
                         <Badge variant="secondary">{cls?.name}</Badge>
                       </div>
                     </div>
+                    {canEdit && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -253,6 +254,7 @@ export default function Homework() {
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
+                    )}
                   </div>
 
                   {hw.description && (
