@@ -15,6 +15,7 @@ import { format, startOfWeek, addDays, addWeeks, subWeeks, getISOWeek, getYear }
 import { fr } from "date-fns/locale";
 import DeclareEventModal from "@/components/schedule/DeclareEventModal";
 import { useTeacherProfile } from "@/components/teachers/useTeacherProfile";
+import { useCurrentMember } from "@/components/hooks/useCurrentMember";
 
 const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
 const HOURS = ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00"];
