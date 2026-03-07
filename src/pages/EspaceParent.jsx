@@ -55,7 +55,7 @@ export default function EspaceParent() {
     <div className="space-y-6 max-w-4xl mx-auto">
       {/* Header */}
       <div className="bg-gradient-to-r from-amber-500 to-orange-500 rounded-2xl p-6 text-white">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-4">
             <div className="text-4xl">👨‍👩‍👧</div>
             <div>
@@ -66,13 +66,25 @@ export default function EspaceParent() {
               <p className="text-white/80 text-sm mt-0.5">
                 Suivi complet de{" "}
                 <span className="font-semibold text-white">
-                  {child ? `${child.first_name} ${child.last_name}` : DEMO_CHILD_NAME}
+                  {child ? `${child.first_name} ${child.last_name}` : "votre enfant"}
                 </span>
               </p>
             </div>
           </div>
-          <div className="hidden sm:flex flex-col items-end gap-1">
-            <span className="text-white/60 text-xs">Accès en temps réel</span>
+          <div className="flex flex-col items-end gap-2">
+            {/* Child selector (for parents with multiple children) */}
+            {students.length > 1 && (
+              <Select value={selectedChildId || ""} onValueChange={setSelectedChildId}>
+                <SelectTrigger className="w-48 bg-white/20 border-white/30 text-white text-sm h-8">
+                  <SelectValue placeholder="Choisir un enfant" />
+                </SelectTrigger>
+                <SelectContent>
+                  {students.map(s => (
+                    <SelectItem key={s.id} value={s.id}>{s.first_name} {s.last_name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
             <div className="flex items-center gap-1 text-green-300 text-xs">
               <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
               Connecté
