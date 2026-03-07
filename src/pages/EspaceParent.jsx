@@ -10,8 +10,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   TrendingUp, TrendingDown, Minus, Bell, MessageCircle, Calendar,
   AlertTriangle, CheckCircle, BookOpen, Clock, Send, Star, User,
-  ChevronRight, Sparkles, Shield, Award, Loader2, CalendarCheck
+  ChevronRight, Sparkles, Shield, Award, Loader2, CalendarCheck, ChevronDown
 } from "lucide-react";
+import { useCurrentMember } from "@/components/hooks/useCurrentMember";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const TABS = [
   { id: "notes", label: "📊 Notes", icon: TrendingUp },
@@ -21,13 +23,13 @@ const TABS = [
   { id: "rdv", label: "📅 Rendez-vous", icon: Calendar },
 ];
 
-// Simulated child (in a real app this would be linked to the logged-in parent)
-const DEMO_CHILD_NAME = "Mon Enfant";
-
 export default function EspaceParent() {
   const [activeTab, setActiveTab] = useState("notes");
+  const [selectedChildId, setSelectedChildId] = useState(null);
 
-  const { data: students = [] } = useQuery({ queryKey: ["students"], queryFn: () => base44.entities.Student.list() });
+  const { myChildren, isParent, userEmail } = useCurrentMember();
+
+  const { data: allStudents = [] } = useQuery({ queryKey: ["students"], queryFn: () => base44.entities.Student.list() });
   const { data: grades = [] } = useQuery({ queryKey: ["grades"], queryFn: () => base44.entities.Grade.list() });
   const { data: exams = [] } = useQuery({ queryKey: ["exams"], queryFn: () => base44.entities.Exam.list() });
   const { data: subjects = [] } = useQuery({ queryKey: ["subjects"], queryFn: () => base44.entities.Subject.list() });
@@ -36,8 +38,18 @@ export default function EspaceParent() {
   const { data: teachers = [] } = useQuery({ queryKey: ["teachers"], queryFn: () => base44.entities.Teacher.list() });
   const { data: messages = [] } = useQuery({ queryKey: ["messages"], queryFn: () => base44.entities.Message.list() });
 
-  // Use first active student as demo child
-  const child = students.find(s => s.status === "active") || students[0];
+  // Determine which students to show: if connected as parent, filter to own children
+  const students = isParent && myChildren.length > 0 ? myChildren : allStudents;
+
+  // Auto-select first child
+  React.useEffect(() => {
+    if (students.length > 0 && !selectedChildId) {
+      setSelectedChildId(students[0].id);
+    }
+  }, [students]);
+
+  // The selected child
+  const child = students.find(s => s.id === selectedChildId) || students[0];
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
