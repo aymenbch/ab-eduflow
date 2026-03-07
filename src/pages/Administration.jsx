@@ -514,6 +514,11 @@ export default function Administration() {
         </TabsContent>
       </Tabs>
 
+      {/* Bulk invite modal */}
+      {bulkInviteOpen && (
+        <BulkInviteModal open={bulkInviteOpen} onClose={() => setBulkInviteOpen(false)} />
+      )}
+
       {/* Modal */}
       {modalOpen && (
         <InviteUserModal
