@@ -71,6 +71,13 @@ export default function Schedule() {
   const { data: teachers = [] } = useQuery({ queryKey: ["teachers"], queryFn: () => base44.entities.Teacher.list() });
   const { data: scheduleEvents = [] } = useQuery({ queryKey: ["schedule-events"], queryFn: () => base44.entities.ScheduleEvent.list() });
 
+  // Auto-select student's class
+  React.useEffect(() => {
+    if (isStudent && myStudent?.class_id && !selectedClass) {
+      setSelectedClass(myStudent.class_id);
+    }
+  }, [isStudent, myStudent]);
+
   const subjectMap = Object.fromEntries(subjects.map(s => [s.id, s]));
   const teacherMap = Object.fromEntries(teachers.map(t => [t.id, t]));
 
