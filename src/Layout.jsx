@@ -69,6 +69,7 @@ const ALL_NAVIGATION = [
   { name: "Réseau Social Éducatif", href: "SocialNetwork", icon: Network },
   { name: "Affectation Intelligente", href: "Affectation", icon: Users },
   { name: "Affectation Élèves", href: "AffectationEleves", icon: GraduationCap },
+  { name: "Mon Espace Élève", href: "StudentDashboard", icon: GraduationCap },
 ];
 
 const ADMIN_NAV = [
