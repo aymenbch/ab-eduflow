@@ -186,7 +186,7 @@ export default function Homework() {
       <PageHeader
         title="Devoirs à faire"
         description={`${homework.length} devoirs assignés`}
-        action={handleNew}
+        action={canEdit ? handleNew : undefined}
         actionLabel="Nouveau devoir"
       />
 
