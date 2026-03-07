@@ -289,13 +289,22 @@ export default function Administration() {
               <p className="text-white/70 text-sm">Gestion des utilisateurs, rôles, modules et configuration</p>
             </div>
           </div>
-          <Button
-            onClick={() => { setEditProfile(null); setModalOpen(true); }}
-            className="bg-white text-red-700 hover:bg-red-50 font-semibold gap-2"
-          >
-            <UserPlus className="w-4 h-4" />
-            Nouvel utilisateur
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={() => setBulkInviteOpen(true)}
+              className="bg-white/20 text-white hover:bg-white/30 border border-white/30 font-semibold gap-2"
+            >
+              <Send className="w-4 h-4" />
+              Invitation en masse
+            </Button>
+            <Button
+              onClick={() => { setEditProfile(null); setModalOpen(true); }}
+              className="bg-white text-red-700 hover:bg-red-50 font-semibold gap-2"
+            >
+              <UserPlus className="w-4 h-4" />
+              Nouvel utilisateur
+            </Button>
+          </div>
         </div>
       </div>
 
