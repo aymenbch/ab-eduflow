@@ -57,6 +57,7 @@ export default function Schedule() {
   const currentRole = localStorage.getItem("edugest_role");
   const canDeclare = CAN_DECLARE_ROLES.includes(currentRole);
   const { mySubjectIds, isTeacherRole } = useTeacherProfile();
+  const { isStudent, myStudent } = useCurrentMember();
   const queryClient = useQueryClient();
 
   const weekStart = startOfWeek(currentWeek, { weekStartsOn: 1 });
