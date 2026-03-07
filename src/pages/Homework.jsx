@@ -94,6 +94,9 @@ export default function Homework() {
     ? subjects.filter(s => mySubjectIds.includes(s.id))
     : subjects;
 
+  // Élève : lecture seule (pas de bouton d'ajout)
+  const canEdit = !isStudent;
+
   const handleNew = () => {
     setSelectedHomework(null);
     setFormData({
