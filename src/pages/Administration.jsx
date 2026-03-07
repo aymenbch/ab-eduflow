@@ -219,6 +219,7 @@ export default function Administration() {
   const [filterRole, setFilterRole] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
   const [viewMode, setViewMode] = useState("grid"); // "grid" | "list"
+  const [bulkInviteOpen, setBulkInviteOpen] = useState(false);
 
   const queryClient = useQueryClient();
 
