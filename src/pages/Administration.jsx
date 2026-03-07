@@ -23,6 +23,7 @@ import {
 import { ROLES, PAGE_LABELS } from "@/components/roles/roles";
 import InviteUserModal from "@/components/admin/InviteUserModal";
 import SystemConfigSection from "@/components/admin/SystemConfigSection";
+import BulkInviteModal from "@/components/admin/BulkInviteModal";
 
 const STATUS_COLORS = {
   active: "bg-green-100 text-green-700 border-green-200",
