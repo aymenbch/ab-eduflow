@@ -72,7 +72,7 @@ export default function Schedule() {
   const { data: scheduleEvents = [] } = useQuery({ queryKey: ["schedule-events"], queryFn: () => base44.entities.ScheduleEvent.list() });
 
   // Auto-select student's class
-  React.useEffect(() => {
+  useEffect(() => {
     if (isStudent && myStudent?.class_id && !selectedClass) {
       setSelectedClass(myStudent.class_id);
     }
