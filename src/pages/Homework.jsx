@@ -40,6 +40,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { format, isPast, isToday } from "date-fns";
 import { useTeacherProfile } from "@/components/teachers/useTeacherProfile";
+import { useCurrentMember } from "@/components/hooks/useCurrentMember";
 import { fr } from "date-fns/locale";
 
 export default function Homework() {
