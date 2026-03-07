@@ -63,13 +63,16 @@ export default function Homework() {
 
   const queryClient = useQueryClient();
   const { mySubjectIds, isTeacherRole } = useTeacherProfile();
+  const { isStudent, myStudent } = useCurrentMember();
 
   const { data: homeworkAll = [], isLoading } = useQuery({
     queryKey: ["homework"],
     queryFn: () => base44.entities.Homework.list("-due_date"),
   });
 
-  const homework = isTeacherRole && mySubjectIds.length > 0
+  const homework = isStudent && myStudent
+    ? homeworkAll.filter(h => h.class_id === myStudent.class_id)
+    : isTeacherRole && mySubjectIds.length > 0
     ? homeworkAll.filter(h => mySubjectIds.includes(h.subject_id))
     : homeworkAll;
 
