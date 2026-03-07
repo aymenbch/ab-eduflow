@@ -13,7 +13,6 @@ import {
   ChevronRight, Sparkles, Shield, Award, Loader2, CalendarCheck, ChevronDown
 } from "lucide-react";
 import { useCurrentMember } from "@/components/hooks/useCurrentMember";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const TABS = [
   { id: "notes", label: "📊 Notes", icon: TrendingUp },
