@@ -115,7 +115,8 @@ export default function Layout({ children, currentPageName }) {
 
   // Block access to unauthorized pages
   useEffect(() => {
-    if (currentRole && roleConfig && currentPageName && currentPageName !== "RoleSelect") {
+    const exemptPages = ["RoleSelect", "AppLogin", "Grades", "StudentDetail"];
+    if (currentRole && roleConfig && currentPageName && !exemptPages.includes(currentPageName)) {
       const allowedPages = [...roleConfig.pages, "Grades", "StudentDetail"];
       if (!allowedPages.includes(currentPageName)) {
         window.location.href = createPageUrl("Dashboard");
