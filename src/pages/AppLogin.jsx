@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
 import { hashPin, saveSession, getSession } from "@/components/auth/appAuth";
 import { createPageUrl } from "@/utils";
 import { Input } from "@/components/ui/input";
