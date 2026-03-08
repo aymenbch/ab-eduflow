@@ -85,7 +85,8 @@ export default function Layout({ children, currentPageName }) {
   const currentPath = location.pathname.split('/').pop() || 'Dashboard';
 
   useEffect(() => {
-    const role = localStorage.getItem("edugest_role");
+    const session = getSession();
+    const role = session?.role || localStorage.getItem("edugest_role");
     setCurrentRole(role);
   }, [currentPageName]);
 
