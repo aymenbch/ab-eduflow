@@ -310,13 +310,16 @@ export default function Administration() {
         </div>
       </div>
 
-      <Tabs defaultValue="users">
-        <TabsList className="grid w-full grid-cols-2">
+      <Tabs defaultValue="app_users">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="app_users" className="flex items-center gap-2">
+            <Lock className="w-4 h-4" /> Comptes &amp; Accès
+          </TabsTrigger>
           <TabsTrigger value="users" className="flex items-center gap-2">
-            <Users className="w-4 h-4" /> Utilisateurs
+            <Users className="w-4 h-4" /> Profils Base44
           </TabsTrigger>
           <TabsTrigger value="config" className="flex items-center gap-2">
-            <Settings className="w-4 h-4" /> Configuration système
+            <Settings className="w-4 h-4" /> Configuration
           </TabsTrigger>
         </TabsList>
 
