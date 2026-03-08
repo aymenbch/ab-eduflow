@@ -200,20 +200,20 @@ export default function AppUserManager() {
 
   const handleDelete = async (user) => {
     if (confirm(`Supprimer le compte de ${user.full_name || user.login} ?`)) {
-      await base44.entities.AppUser.delete(user.id);
+      await base44.functions.invoke("appUserAdmin", { action: "delete", user_id: user.id });
       queryClient.invalidateQueries({ queryKey: ["app_users"] });
     }
   };
 
   const handleToggleSuspend = async (user) => {
     const newStatus = user.status === "suspended" ? "active" : "suspended";
-    await base44.entities.AppUser.update(user.id, { status: newStatus });
+    await base44.functions.invoke("appUserAdmin", { action: "update", user_id: user.id, payload: { status: newStatus } });
     queryClient.invalidateQueries({ queryKey: ["app_users"] });
   };
 
   const handleResetPin = async (user) => {
     const defaultPin = await hashPin("1234");
-    await base44.entities.AppUser.update(user.id, { pin_hash: defaultPin, must_change_pin: true });
+    await base44.functions.invoke("appUserAdmin", { action: "update", user_id: user.id, payload: { pin_hash: defaultPin, must_change_pin: true } });
     queryClient.invalidateQueries({ queryKey: ["app_users"] });
     alert(`PIN réinitialisé à 1234 pour ${user.full_name || user.login}. L'utilisateur devra le changer à la prochaine connexion.`);
   };
