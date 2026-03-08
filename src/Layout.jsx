@@ -250,8 +250,10 @@ export default function Layout({ children, currentPageName }) {
                     {roleConfig?.icon || "👤"}
                   </div>
                   <div className="flex-1 text-left min-w-0">
-                    <p className="text-sm font-medium text-slate-900 truncate">{roleConfig?.label || "Utilisateur"}</p>
-                    <p className="text-xs text-slate-500">Mode démo</p>
+                    <p className="text-sm font-medium text-slate-900 truncate">
+                      {getSession()?.full_name || roleConfig?.label || "Utilisateur"}
+                    </p>
+                    <p className="text-xs text-slate-500">{roleConfig?.label || ""}</p>
                   </div>
                   <ChevronDown className="w-4 h-4 text-slate-400 flex-shrink-0" />
                 </button>
