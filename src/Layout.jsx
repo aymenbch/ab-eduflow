@@ -263,7 +263,7 @@ export default function Layout({ children, currentPageName }) {
                   <RefreshCw className="w-4 h-4 mr-2" />
                   Changer de profil
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => base44.auth.logout()}>
+                <DropdownMenuItem onClick={() => { clearSession(); window.location.href = createPageUrl("AppLogin"); }}>
                   <LogOut className="w-4 h-4 mr-2" />
                   Déconnexion
                 </DropdownMenuItem>
