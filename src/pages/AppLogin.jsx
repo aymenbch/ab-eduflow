@@ -26,6 +26,16 @@ export default function AppLogin() {
     }
   }, []);
 
+  const callFunction = async (fnName, payload) => {
+    const appId = import.meta.env.VITE_APP_ID || window.__APP_ID__;
+    const res = await fetch(`/api/functions/${fnName}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    return res.json();
+  };
+
   const handleLogin = async (e) => {
     e.preventDefault();
     if (!login.trim() || !pin.trim()) {
@@ -35,11 +45,10 @@ export default function AppLogin() {
     setLoading(true);
     setError("");
     const pinHash = await hashPin(pin.trim());
-    const response = await base44.functions.invoke("appLogin", {
+    const data = await callFunction("appLogin", {
       login: login.trim().toLowerCase(),
       pin_hash: pinHash,
     });
-    const data = response.data;
     if (data.error) {
       setError(data.error);
       setLoading(false);
