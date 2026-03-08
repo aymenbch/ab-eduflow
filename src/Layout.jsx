@@ -90,12 +90,13 @@ export default function Layout({ children, currentPageName }) {
     setCurrentRole(role);
   }, [currentPageName]);
 
-  // If no role selected and not on RoleSelect page, redirect
+  // If no session/role and not on AppLogin or RoleSelect, redirect to AppLogin
   useEffect(() => {
-    const role = localStorage.getItem("edugest_role");
-    if (!role && currentPageName !== "RoleSelect" && currentPageName !== "roleselect") {
-      // Use navigate instead of hard redirect to avoid page-not-found loops
-      const url = createPageUrl("RoleSelect");
+    const session = getSession();
+    const role = session?.role || localStorage.getItem("edugest_role");
+    const exemptPages = ["AppLogin", "RoleSelect", "applogin", "roleselect"];
+    if (!role && !exemptPages.includes(currentPageName)) {
+      const url = createPageUrl("AppLogin");
       if (window.location.href !== url) {
         window.location.replace(url);
       }
