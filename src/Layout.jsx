@@ -128,7 +128,7 @@ export default function Layout({ children, currentPageName }) {
     window.location.href = createPageUrl("AppLogin");
   };
 
-  if (currentPageName === "RoleSelect") {
+  if (currentPageName === "RoleSelect" || currentPageName === "AppLogin") {
     return <>{children}</>;
   }
 
