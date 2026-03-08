@@ -51,6 +51,7 @@ import Administration from './pages/Administration';
 import Affectation from './pages/Affectation';
 import AffectationEleves from './pages/AffectationEleves';
 import Analytics from './pages/Analytics';
+import AppLogin from './pages/AppLogin';
 import Attendance from './pages/Attendance';
 import Bulletins from './pages/Bulletins';
 import Classes from './pages/Classes';
@@ -78,7 +79,6 @@ import StudentDetail from './pages/StudentDetail';
 import Students from './pages/Students';
 import Subjects from './pages/Subjects';
 import Teachers from './pages/Teachers';
-import AppLogin from './pages/AppLogin';
 import __Layout from './Layout.jsx';
 
 
@@ -87,6 +87,7 @@ export const PAGES = {
     "Affectation": Affectation,
     "AffectationEleves": AffectationEleves,
     "Analytics": Analytics,
+    "AppLogin": AppLogin,
     "Attendance": Attendance,
     "Bulletins": Bulletins,
     "Classes": Classes,
@@ -114,7 +115,6 @@ export const PAGES = {
     "Students": Students,
     "Subjects": Subjects,
     "Teachers": Teachers,
-    "AppLogin": AppLogin,
 }
 
 export const pagesConfig = {

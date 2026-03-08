@@ -34,35 +34,23 @@ export default function AppLogin() {
     }
     setLoading(true);
     setError("");
-    try {
-      const pinHash = await hashPin(pin.trim());
-      const results = await base44.entities.AppUser.filter({ login: login.trim().toLowerCase() });
-      if (!results.length) {
-        setError("Identifiant introuvable.");
-        setLoading(false);
-        return;
-      }
-      const user = results[0];
-      if (user.status === "suspended") {
-        setError("Ce compte est suspendu. Contactez l'administration.");
-        setLoading(false);
-        return;
-      }
-      if (user.pin_hash !== pinHash) {
-        setError("PIN incorrect.");
-        setLoading(false);
-        return;
-      }
-      await base44.entities.AppUser.update(user.id, { last_login: new Date().toISOString() });
-      if (user.must_change_pin) {
-        setPendingUser(user);
-        setMustChangePin(true);
-      } else {
-        saveSession(user);
-        window.location.href = createPageUrl("Dashboard");
-      }
-    } catch {
-      setError("Erreur de connexion. Réessayez.");
+    const pinHash = await hashPin(pin.trim());
+    const response = await base44.functions.invoke("appLogin", {
+      login: login.trim().toLowerCase(),
+      pin_hash: pinHash,
+    });
+    const data = response.data;
+    if (data.error) {
+      setError(data.error);
+      setLoading(false);
+      return;
+    }
+    if (data.must_change_pin) {
+      setPendingUser(data);
+      setMustChangePin(true);
+    } else {
+      saveSession(data);
+      window.location.href = createPageUrl("Dashboard");
     }
     setLoading(false);
   };
