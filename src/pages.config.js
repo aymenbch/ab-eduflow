@@ -72,12 +72,13 @@ import Schedule from './pages/Schedule';
 import SchoolYearManager from './pages/SchoolYearManager';
 import SocialNetwork from './pages/SocialNetwork';
 import Staff from './pages/Staff';
+import StudentDashboard from './pages/StudentDashboard';
 import StudentDashboard360 from './pages/StudentDashboard360';
 import StudentDetail from './pages/StudentDetail';
 import Students from './pages/Students';
 import Subjects from './pages/Subjects';
 import Teachers from './pages/Teachers';
-import StudentDashboard from './pages/StudentDashboard';
+import AppLogin from './pages/AppLogin';
 import __Layout from './Layout.jsx';
 
 
@@ -107,12 +108,13 @@ export const PAGES = {
     "SchoolYearManager": SchoolYearManager,
     "SocialNetwork": SocialNetwork,
     "Staff": Staff,
+    "StudentDashboard": StudentDashboard,
     "StudentDashboard360": StudentDashboard360,
     "StudentDetail": StudentDetail,
     "Students": Students,
     "Subjects": Subjects,
     "Teachers": Teachers,
-    "StudentDashboard": StudentDashboard,
+    "AppLogin": AppLogin,
 }
 
 export const pagesConfig = {
