@@ -124,8 +124,8 @@ export default function Layout({ children, currentPageName }) {
   }, [currentPageName, currentRole]);
 
   const handleChangeRole = () => {
-    localStorage.removeItem("edugest_role");
-    window.location.href = createPageUrl("RoleSelect");
+    clearSession();
+    window.location.href = createPageUrl("AppLogin");
   };
 
   if (currentPageName === "RoleSelect") {
