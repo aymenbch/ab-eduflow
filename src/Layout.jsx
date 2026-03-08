@@ -40,6 +40,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { base44 } from "@/api/base44Client";
 import { ROLES } from "@/components/roles/roles";
+import { getSession, clearSession } from "@/components/auth/appAuth";
 import AIChatbot from "@/components/chatbot/AIChatbot";
 import MobileBottomNav from "@/components/layout/MobileBottomNav";
 import WelcomeBanner from "@/components/layout/WelcomeBanner";
