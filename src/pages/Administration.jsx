@@ -323,6 +323,18 @@ export default function Administration() {
           </TabsTrigger>
         </TabsList>
 
+        {/* ── ONGLET COMPTES INTERNES ── */}
+        <TabsContent value="app_users" className="mt-6">
+          <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-800">
+            <strong>🔐 Comptes de connexion EduGest</strong> — Créez les comptes avec identifiant + PIN pour chaque membre (élève, parent, enseignant). Les élèves se connectent avec leur numéro étudiant, les autres avec leur email ou téléphone.
+            <br />
+            <a href={`${window.location.origin}${window.location.pathname.replace(/[^/]*$/, '')}appLogin`} target="_blank" className="underline text-blue-600 mt-1 inline-block">
+              → Accéder à la page de connexion
+            </a>
+          </div>
+          <AppUserManager />
+        </TabsContent>
+
         {/* ── ONGLET UTILISATEURS ── */}
         <TabsContent value="users" className="mt-6 space-y-6">
 
