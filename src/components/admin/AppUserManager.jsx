@@ -88,9 +88,9 @@ function AppUserFormModal({ open, onClose, onSaved, editUser }) {
       ...(pinHash && { pin_hash: pinHash, must_change_pin: !isEdit }),
     };
     if (isEdit) {
-      await base44.entities.AppUser.update(editUser.id, payload);
+      await base44.functions.invoke("appUserAdmin", { action: "update", user_id: editUser.id, payload });
     } else {
-      await base44.entities.AppUser.create(payload);
+      await base44.functions.invoke("appUserAdmin", { action: "create", payload });
     }
     setLoading(false);
     onSaved();
