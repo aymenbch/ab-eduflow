@@ -186,7 +186,10 @@ export default function AppUserManager() {
 
   const { data: appUsers = [], isLoading } = useQuery({
     queryKey: ["app_users"],
-    queryFn: () => base44.entities.AppUser.list("-created_date"),
+    queryFn: async () => {
+      const res = await base44.functions.invoke("appUserAdmin", { action: "list" });
+      return res.data || [];
+    },
   });
 
   const handleSaved = () => {
