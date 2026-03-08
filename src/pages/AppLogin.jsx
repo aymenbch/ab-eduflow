@@ -71,7 +71,7 @@ export default function AppLogin() {
     setLoading(true);
     setError("");
     const pinHash = await hashPin(newPin);
-    await base44.functions.invoke("appUpdatePin", { user_id: pendingUser.id, pin_hash: pinHash });
+    await callFunction("appUpdatePin", { user_id: pendingUser.id, pin_hash: pinHash });
     const updatedUser = { ...pendingUser, pin_hash: pinHash, must_change_pin: false };
     saveSession(updatedUser);
     window.location.href = createPageUrl("Dashboard");
