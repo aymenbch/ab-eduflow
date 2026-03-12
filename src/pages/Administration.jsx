@@ -159,6 +159,9 @@ function UserRow({ profile, onEdit, onToggleSuspend, onDelete, onResendInvite, r
           <div>
             <p className="font-medium text-slate-900 text-sm">{profile.full_name || "—"}</p>
             <p className="text-xs text-slate-400">{profile.email}</p>
+            {profile.login && (
+              <p className="text-[10px] text-slate-400 font-mono">🔑 {profile.login}</p>
+            )}
           </div>
         </div>
       </td>
