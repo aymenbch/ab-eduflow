@@ -21,6 +21,7 @@ export default function InviteUserModal({ open, onClose, onSaved, profile }) {
   const [form, setForm] = useState({
     email: profile?.email || "",
     full_name: profile?.full_name || "",
+    login: profile?.login || "",
     edugest_role: profile?.edugest_role || "",
     use_custom_pages: profile?.use_custom_pages || false,
     custom_pages: profile?.custom_pages || [],
