@@ -69,12 +69,15 @@ function UserCard({ profile, onEdit, onToggleSuspend, onDelete, onResendInvite, 
               {role?.icon || "👤"}
             </div>
             <div>
-              <p className="font-semibold text-slate-900">{profile.full_name || "—"}</p>
-              <p className="text-xs text-slate-500 truncate max-w-[160px]">{profile.email}</p>
-              {profile.invited_at && (
-                <p className="text-[10px] text-slate-400 mt-0.5">Invité le {profile.invited_at}</p>
-              )}
-            </div>
+                <p className="font-semibold text-slate-900">{profile.full_name || "—"}</p>
+                <p className="text-xs text-slate-500 truncate max-w-[160px]">{profile.email}</p>
+                {profile.login && (
+                  <p className="text-[10px] text-slate-400 mt-0.5 font-mono">🔑 {profile.login}</p>
+                )}
+                {profile.invited_at && (
+                  <p className="text-[10px] text-slate-400 mt-0.5">Invité le {profile.invited_at}</p>
+                )}
+              </div>
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
