@@ -103,6 +103,16 @@ export default function InviteUserModal({ open, onClose, onSaved, profile }) {
           </div>
 
           <div className="space-y-1">
+            <Label>Login EduGest</Label>
+            <Input
+              value={form.login}
+              onChange={e => setForm({ ...form, login: e.target.value })}
+              placeholder="N° élève (ex: 20240001) ou email pour les autres profils"
+            />
+            <p className="text-xs text-slate-400">Numéro étudiant pour les élèves · Email ou téléphone pour les autres</p>
+          </div>
+
+          <div className="space-y-1">
             <Label>Rôle EduGest *</Label>
             <Select value={form.edugest_role} onValueChange={handleRoleChange} required>
               <SelectTrigger>
