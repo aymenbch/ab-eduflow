@@ -109,7 +109,7 @@ export const PAGE_LABELS = {
   Subjects: "Matières",
   Staff: "Personnel",
   Schedule: "Emploi du temps",
-  Exams: "Examens",
+  Exams: "Examens & Notes",
   Grades: "Notes",
   Homework: "Devoirs",
   Resources: "Ressources",
@@ -117,5 +117,89 @@ export const PAGE_LABELS = {
   Sanctions: "Sanctions",
   Messages: "Messages",
   Events: "Événements",
+  Finance: "Finance & Contentieux",
+  Bulletins: "Bulletins Scolaires",
+  SchoolYearManager: "Années Scolaires",
+  MobileSaisie: "Saisie Rapide Mobile",
+  EspaceParent: "Espace Parents Premium",
   Pilotage: "Pilotage & Performance",
+  ProjectsScrum: "Projets Agile / Scrum",
+  SocialNetwork: "Réseau Social Éducatif",
+  Affectation: "Affectation Intelligente",
+  AffectationEleves: "Affectation Élèves",
+  StudentDashboard: "Mon Espace Élève",
+  Administration: "Administration Système",
 };
+
+// All pages grouped by category (for the permissions matrix UI)
+export const ALL_PAGES_BY_CATEGORY = [
+  {
+    category: "Général",
+    icon: "🏠",
+    pages: [
+      { key: "Dashboard", label: "Tableau de bord" },
+    ],
+  },
+  {
+    category: "Pédagogie",
+    icon: "📚",
+    pages: [
+      { key: "Students", label: "Élèves" },
+      { key: "Teachers", label: "Enseignants" },
+      { key: "Classes", label: "Classes" },
+      { key: "Subjects", label: "Matières" },
+      { key: "Schedule", label: "Emploi du temps" },
+      { key: "Exams", label: "Examens & Notes" },
+      { key: "Grades", label: "Notes" },
+      { key: "Homework", label: "Devoirs" },
+      { key: "Resources", label: "Ressources" },
+      { key: "Bulletins", label: "Bulletins Scolaires" },
+    ],
+  },
+  {
+    category: "Vie scolaire",
+    icon: "🏫",
+    pages: [
+      { key: "Attendance", label: "Présences" },
+      { key: "Sanctions", label: "Sanctions" },
+      { key: "Messages", label: "Messages" },
+      { key: "Events", label: "Événements" },
+    ],
+  },
+  {
+    category: "Administration",
+    icon: "🏢",
+    pages: [
+      { key: "Staff", label: "Personnel" },
+      { key: "Finance", label: "Finance & Contentieux" },
+      { key: "SchoolYearManager", label: "Années Scolaires" },
+    ],
+  },
+  {
+    category: "Espaces dédiés",
+    icon: "👤",
+    pages: [
+      { key: "EspaceParent", label: "Espace Parents Premium" },
+      { key: "StudentDashboard", label: "Mon Espace Élève" },
+      { key: "MobileSaisie", label: "Saisie Rapide Mobile" },
+    ],
+  },
+  {
+    category: "Outils avancés",
+    icon: "⚙️",
+    pages: [
+      { key: "Pilotage", label: "Pilotage & Performance" },
+      { key: "ProjectsScrum", label: "Projets Agile / Scrum" },
+      { key: "SocialNetwork", label: "Réseau Social Éducatif" },
+      { key: "Affectation", label: "Affectation Intelligente" },
+      { key: "AffectationEleves", label: "Affectation Élèves" },
+    ],
+  },
+  {
+    category: "Système",
+    icon: "🔐",
+    pages: [
+      { key: "Administration", label: "Administration Système" },
+    ],
+  },
+];

@@ -105,9 +105,23 @@ export default function Layout({ children, currentPageName }) {
 
   const roleConfig = currentRole ? ROLES[currentRole] : null;
 
-  // Filter navigation based on role
+  // Load custom permissions (set by RolePermissionsManager) or fall back to role defaults
+  const getEffectivePages = (role) => {
+    try {
+      const saved = localStorage.getItem("edugest_role_permissions");
+      if (saved) {
+        const custom = JSON.parse(saved);
+        if (custom[role]) return custom[role];
+      }
+    } catch {}
+    return ROLES[role]?.pages || [];
+  };
+
+  const effectivePages = currentRole ? getEffectivePages(currentRole) : [];
+
+  // Filter navigation based on effective pages
   const navigation = currentRole && roleConfig
-    ? ALL_NAVIGATION.filter(item => roleConfig.pages.includes(item.href))
+    ? ALL_NAVIGATION.filter(item => effectivePages.includes(item.href))
     : ALL_NAVIGATION;
 
   // Only admin_systeme sees the Administration page
@@ -117,8 +131,8 @@ export default function Layout({ children, currentPageName }) {
   useEffect(() => {
     const exemptPages = ["RoleSelect", "AppLogin", "Grades", "StudentDetail"];
     if (currentRole && roleConfig && currentPageName && !exemptPages.includes(currentPageName)) {
-      const allowedPages = [...roleConfig.pages, "Grades", "StudentDetail"];
-      if (!allowedPages.includes(currentPageName)) {
+      const allowed = [...getEffectivePages(currentRole), "Grades", "StudentDetail"];
+      if (!allowed.includes(currentPageName)) {
         window.location.href = createPageUrl("Dashboard");
       }
     }

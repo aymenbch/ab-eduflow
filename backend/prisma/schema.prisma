@@ -1,0 +1,337 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model AppUser {
+  id              String    @id @default(uuid())
+  login           String    @unique
+  pin_hash        String
+  full_name       String?
+  role            String
+  member_type     String    @default("none")
+  member_id       String?
+  status          String    @default("active")
+  must_change_pin Boolean   @default(false)
+  last_login      DateTime?
+  created_date    DateTime  @default(now())
+}
+
+model Student {
+  id              String   @id @default(uuid())
+  first_name      String
+  last_name       String
+  student_code    String?  @unique
+  date_of_birth   String?
+  gender          String?
+  class_id        String?
+  enrollment_date String?
+  status          String   @default("active")
+  address         String?
+  parent_name     String?
+  parent_phone    String?
+  parent_email    String?
+  medical_notes   String?
+  created_date    DateTime @default(now())
+}
+
+model Teacher {
+  id            String   @id @default(uuid())
+  first_name    String
+  last_name     String
+  email         String?
+  phone         String?
+  subject_ids   String   @default("[]")
+  hire_date     String?
+  status        String   @default("active")
+  address       String?
+  qualification String?
+  employee_code String?
+  contract_type String?
+  salary        Float?
+  created_date  DateTime @default(now())
+}
+
+model Staff {
+  id            String   @id @default(uuid())
+  first_name    String
+  last_name     String
+  email         String?
+  phone         String?
+  role          String?
+  hire_date     String?
+  status        String   @default("active")
+  address       String?
+  contract_type String?
+  salary        Float?
+  employee_code String?
+  created_date  DateTime @default(now())
+}
+
+model Class {
+  id              String   @id @default(uuid())
+  name            String
+  level           String?
+  school_year     String?
+  main_teacher_id String?
+  room            String?
+  capacity        Int?
+  created_date    DateTime @default(now())
+}
+
+model Subject {
+  id           String   @id @default(uuid())
+  name         String
+  code         String?
+  coefficient  Float?
+  level        String?
+  description  String?
+  created_date DateTime @default(now())
+}
+
+model Grade {
+  id           String   @id @default(uuid())
+  student_id   String
+  exam_id      String
+  score        Float?
+  comment      String?
+  absent       Boolean  @default(false)
+  created_date DateTime @default(now())
+}
+
+model Exam {
+  id           String   @id @default(uuid())
+  name         String
+  class_id     String?
+  subject_id   String?
+  teacher_id   String?
+  date         String?
+  type         String?
+  coefficient  Float?
+  max_score    Float?
+  created_date DateTime @default(now())
+}
+
+model Attendance {
+  id           String   @id @default(uuid())
+  student_id   String
+  class_id     String?
+  date         String
+  status       String   @default("present")
+  comment      String?
+  created_date DateTime @default(now())
+}
+
+model Schedule {
+  id           String   @id @default(uuid())
+  class_id     String
+  subject_id   String?
+  teacher_id   String?
+  day_of_week  Int
+  start_time   String
+  end_time     String
+  room         String?
+  created_date DateTime @default(now())
+}
+
+model ScheduleEvent {
+  id           String   @id @default(uuid())
+  title        String
+  class_id     String?
+  date         String?
+  start_time   String?
+  end_time     String?
+  type         String?
+  description  String?
+  created_date DateTime @default(now())
+}
+
+model SchoolYear {
+  id            String    @id @default(uuid())
+  year          String
+  start_date    String?
+  end_date      String?
+  status        String    @default("active")
+  archived_date DateTime?
+  created_date  DateTime  @default(now())
+}
+
+model Message {
+  id             String   @id @default(uuid())
+  sender_type    String?
+  sender_name    String?
+  recipient_type String?
+  recipient_id   String?
+  student_id     String?
+  subject        String?
+  content        String?
+  priority       String   @default("normal")
+  read           Boolean  @default(false)
+  created_date   DateTime @default(now())
+}
+
+model Homework {
+  id           String   @id @default(uuid())
+  title        String
+  class_id     String?
+  subject_id   String?
+  teacher_id   String?
+  due_date     String?
+  description  String?
+  file_url     String?
+  status       String   @default("active")
+  created_date DateTime @default(now())
+}
+
+model Event {
+  id           String   @id @default(uuid())
+  title        String
+  description  String?
+  date         String?
+  start_time   String?
+  end_time     String?
+  location     String?
+  type         String?
+  target       String?
+  created_date DateTime @default(now())
+}
+
+model Sanction {
+  id           String   @id @default(uuid())
+  student_id   String
+  class_id     String?
+  type         String
+  reason       String?
+  date         String?
+  duration     String?
+  status       String   @default("active")
+  resolved_at  String?
+  created_date DateTime @default(now())
+}
+
+model Resource {
+  id           String   @id @default(uuid())
+  title        String
+  description  String?
+  subject_id   String?
+  type         String?
+  file_url     String?
+  level        String?
+  created_date DateTime @default(now())
+}
+
+model Payment {
+  id             String   @id @default(uuid())
+  student_id     String
+  label          String
+  amount         Float
+  amount_paid    Float    @default(0)
+  due_date       String?
+  category       String?
+  status         String   @default("pending")
+  payment_method String?
+  school_year    String?
+  notes          String?
+  created_date   DateTime @default(now())
+}
+
+model Litigation {
+  id           String   @id @default(uuid())
+  student_id   String?
+  title        String
+  description  String?
+  status       String   @default("open")
+  priority     String   @default("normal")
+  resolved_at  String?
+  created_date DateTime @default(now())
+}
+
+model UserProfile {
+  id               String   @id @default(uuid())
+  email            String   @unique
+  full_name        String?
+  login            String?
+  edugest_role     String?
+  status           String   @default("invited")
+  use_custom_pages Boolean  @default(false)
+  custom_pages     String   @default("[]")
+  notes            String?
+  invited_at       String?
+  created_date     DateTime @default(now())
+}
+
+model Promotion {
+  id           String   @id @default(uuid())
+  student_id   String
+  from_class   String?
+  to_class     String?
+  school_year  String?
+  status       String   @default("promoted")
+  created_date DateTime @default(now())
+}
+
+model SocialGroup {
+  id           String   @id @default(uuid())
+  name         String
+  status       String   @default("active")
+  created_date DateTime @default(now())
+}
+
+model SocialPost {
+  id           String   @id @default(uuid())
+  group_id     String?
+  content      String?
+  author_id    String?
+  author_name  String?
+  reactions    String?
+  is_pinned    Boolean  @default(false)
+  is_flagged   Boolean  @default(false)
+  flag_reason  String?
+  created_date DateTime @default(now())
+}
+
+model SocialBadge {
+  id           String   @id @default(uuid())
+  name         String
+  description  String?
+  icon         String?
+  condition    String?
+  created_date DateTime @default(now())
+}
+
+model Project {
+  id           String   @id @default(uuid())
+  name         String
+  description  String?
+  current_kpi  Float?
+  target_kpi   Float?
+  status       String   @default("active")
+  created_date DateTime @default(now())
+}
+
+model Task {
+  id           String   @id @default(uuid())
+  title        String
+  description  String?
+  status       String   @default("todo")
+  priority     String   @default("normal")
+  assignee_id  String?
+  project_id   String?
+  due_date     String?
+  created_date DateTime @default(now())
+}
+
+model Sprint {
+  id           String   @id @default(uuid())
+  name         String
+  project_id   String?
+  start_date   String?
+  end_date     String?
+  status       String   @default("active")
+  goal         String?
+  created_date DateTime @default(now())
+}

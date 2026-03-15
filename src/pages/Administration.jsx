@@ -26,6 +26,7 @@ import InviteUserModal from "@/components/admin/InviteUserModal";
 import SystemConfigSection from "@/components/admin/SystemConfigSection";
 import BulkInviteModal from "@/components/admin/BulkInviteModal";
 import AppUserManager from "@/components/admin/AppUserManager";
+import RolePermissionsManager from "@/components/admin/RolePermissionsManager";
 
 const STATUS_COLORS = {
   active: "bg-green-100 text-green-700 border-green-200",
@@ -216,8 +217,10 @@ function UserRow({ profile, onEdit, onToggleSuspend, onDelete, onResendInvite, r
 
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 export default function Administration() {
-  const currentRole = localStorage.getItem("edugest_role");
-  if (currentRole !== "admin_systeme") return <AccessDenied />;
+  const currentRole = (() => {
+    try { return JSON.parse(localStorage.getItem("edugest_session"))?.role; } catch {}
+    return localStorage.getItem("edugest_role");
+  })();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editProfile, setEditProfile] = useState(null);
@@ -285,6 +288,8 @@ export default function Administration() {
     profiles.reduce((acc, p) => { acc[p.edugest_role] = (acc[p.edugest_role] || 0) + 1; return acc; }, {})
   ).sort((a, b) => b[1] - a[1]);
 
+  if (currentRole !== "admin_systeme") return <AccessDenied />;
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -317,9 +322,12 @@ export default function Administration() {
       </div>
 
       <Tabs defaultValue="app_users">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="app_users" className="flex items-center gap-2">
             <Lock className="w-4 h-4" /> Comptes &amp; Accès
+          </TabsTrigger>
+          <TabsTrigger value="roles" className="flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4" /> Rôles &amp; Permissions
           </TabsTrigger>
           <TabsTrigger value="users" className="flex items-center gap-2">
             <Users className="w-4 h-4" /> Profils Base44
@@ -339,6 +347,11 @@ export default function Administration() {
             </a>
           </div>
           <AppUserManager />
+        </TabsContent>
+
+        {/* ── ONGLET RÔLES & PERMISSIONS ── */}
+        <TabsContent value="roles" className="mt-6">
+          <RolePermissionsManager />
         </TabsContent>
 
         {/* ── ONGLET UTILISATEURS ── */}
