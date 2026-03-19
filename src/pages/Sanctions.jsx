@@ -28,7 +28,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Search, MoreHorizontal, Pencil, Trash2, CheckCircle, Loader2 } from "lucide-react";
+import { Search, MoreHorizontal, Pencil, Trash2, CheckCircle, Loader2, Bell } from "lucide-react";
+import NotifyParentButton from "@/components/notifications/NotifyParentButton";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -253,8 +254,8 @@ export default function Sanctions() {
         actionLabel="Nouvelle sanction"
       />
 
-      <div className="mb-6">
-        <div className="relative max-w-md">
+      <div className="mb-6 flex items-center gap-3 flex-wrap">
+        <div className="relative max-w-md flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
           <Input
             placeholder="Rechercher..."
@@ -263,6 +264,23 @@ export default function Sanctions() {
             className="pl-10"
           />
         </div>
+        <NotifyParentButton
+          eventType="sanction"
+          students={filteredSanctions
+            .filter(s => !s.resolved && !s.parent_notified)
+            .map(s => {
+              const st = studentMap[s.student_id];
+              return st ? {
+                ...st,
+                _sanction_type: SANCTION_TYPES[s.type]?.label || s.type,
+                _reason: s.reason,
+                _date: s.date,
+              } : null;
+            })
+            .filter(Boolean)}
+          variables={{ sanction_type: "sanction", reason: "voir détail" }}
+          label="Notifier parents (non notifiés)"
+        />
       </div>
 
       <DataTable

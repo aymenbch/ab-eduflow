@@ -56,6 +56,7 @@ const functionRoutes = require('./routes/functions');
 const importRoutes = require('./routes/import');
 const aiRoutes = require('./routes/ai');
 const ticketRoutes = require('./routes/tickets');
+const notificationRoutes = require('./routes/notifications');
 const { loadUser, requireAuth } = require('./authUtils');
 
 const app = express();
@@ -135,6 +136,7 @@ app.use('/api/functions', functionRoutes);
 app.use('/api/import', importRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/tickets', ticketRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));

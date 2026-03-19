@@ -1,12 +1,13 @@
 import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Users, ShieldCheck, Lock, Settings,
+  Users, ShieldCheck, Lock, Settings, Bell,
 } from "lucide-react";
 
 import SystemConfigSection from "@/components/admin/SystemConfigSection";
 import AppUserManager from "@/components/admin/AppUserManager";
 import RolePermissionsManager from "@/components/admin/RolePermissionsManager";
+import NotificationSettings from "@/components/admin/NotificationSettings";
 
 // ─── Access Guard ──────────────────────────────────────────────────────────────
 function AccessDenied() {
@@ -48,12 +49,15 @@ export default function Administration() {
       </div>
 
       <Tabs defaultValue="app_users">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="app_users" className="flex items-center gap-2">
             <Lock className="w-4 h-4" /> Comptes &amp; Accès
           </TabsTrigger>
           <TabsTrigger value="roles" className="flex items-center gap-2">
             <ShieldCheck className="w-4 h-4" /> Rôles &amp; Permissions
+          </TabsTrigger>
+          <TabsTrigger value="notifications" className="flex items-center gap-2">
+            <Bell className="w-4 h-4" /> Notifications
           </TabsTrigger>
           <TabsTrigger value="config" className="flex items-center gap-2">
             <Settings className="w-4 h-4" /> Configuration
@@ -75,6 +79,11 @@ export default function Administration() {
         {/* ── ONGLET RÔLES & PERMISSIONS ── */}
         <TabsContent value="roles" className="mt-6">
           <RolePermissionsManager />
+        </TabsContent>
+
+        {/* ── ONGLET NOTIFICATIONS ── */}
+        <TabsContent value="notifications" className="mt-6">
+          <NotificationSettings />
         </TabsContent>
 
         {/* ── ONGLET CONFIG ── */}

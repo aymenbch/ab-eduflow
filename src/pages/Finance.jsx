@@ -20,7 +20,8 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { TrendingUp, TrendingDown, AlertCircle, CheckCircle, Clock, DollarSign, FileWarning, Plus, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
+import { TrendingUp, TrendingDown, AlertCircle, CheckCircle, Clock, DollarSign, FileWarning, Plus, Loader2, ChevronLeft, ChevronRight, Bell } from "lucide-react";
+import NotifyParentButton from "@/components/notifications/NotifyParentButton";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -130,7 +131,32 @@ export default function Finance() {
 
   return (
     <div>
-      <PageHeader title="Gestion Financière & Contentieux" description="Suivi des paiements, créances et contentieux" />
+      <div className="flex items-start justify-between flex-wrap gap-3 mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Gestion Financière &amp; Contentieux</h1>
+          <p className="text-slate-500 mt-1">Suivi des paiements, créances et contentieux</p>
+        </div>
+        <NotifyParentButton
+          eventType="payment_overdue"
+          students={payments
+            .filter(p => p.status === "overdue")
+            .map(p => {
+              const st = studentMap[p.student_id];
+              return st ? {
+                ...st,
+                extra_vars: {
+                  label: p.label || "Paiement",
+                  amount: String(p.amount || 0),
+                  due_date: p.due_date || "",
+                },
+              } : null;
+            })
+            .filter(Boolean)}
+          variables={{}}
+          label="Rappel paiements en retard"
+          variant="outline"
+        />
+      </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">

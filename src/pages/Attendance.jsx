@@ -14,9 +14,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Save, Loader2, Check, X, Clock, AlertCircle } from "lucide-react";
+import { Save, Loader2, Check, X, Clock, AlertCircle, Bell } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import NotifyParentButton from "@/components/notifications/NotifyParentButton";
 
 const STATUS_CONFIG = {
   present: { label: "Présent", icon: Check, color: "bg-green-100 text-green-800 border-green-200" },
@@ -156,7 +157,7 @@ export default function Attendance() {
           />
         </div>
         {selectedClass && (
-          <div className="flex items-end">
+          <div className="flex items-end gap-2">
             <Button onClick={handleSave} disabled={saving}>
               {saving ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -165,6 +166,20 @@ export default function Attendance() {
               )}
               Enregistrer
             </Button>
+            <NotifyParentButton
+              eventType="absence"
+              students={students
+                .filter(s => ["absent", "late"].includes(attendanceData[s.id]?.status))
+                .map(s => ({
+                  ...s,
+                  class_name: classes.find(c => c.id === selectedClass)?.name || "",
+                }))}
+              variables={{
+                date: format(new Date(selectedDate), "dd/MM/yyyy"),
+                status: "absent/retard",
+              }}
+              label="Notifier parents"
+            />
           </div>
         )}
       </div>
