@@ -18,7 +18,7 @@ import {
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
-import { getCurrentLevels } from "@/components/config/educationSystems";
+import { getAccessibleLevels } from "@/utils/accessControl";
 
 export default function ClassForm({ open, onClose, classData, onSave }) {
   const [formData, setFormData] = useState({
@@ -110,7 +110,7 @@ export default function ClassForm({ open, onClose, classData, onSave }) {
                   <SelectValue placeholder="Sélectionner" />
                 </SelectTrigger>
                 <SelectContent>
-                  {getCurrentLevels().map((level) => (
+                  {getAccessibleLevels().map((level) => (
                     <SelectItem key={level} value={level}>
                       {level}
                     </SelectItem>

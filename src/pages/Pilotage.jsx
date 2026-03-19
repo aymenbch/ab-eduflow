@@ -1,6 +1,11 @@
 import React, { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { useCurrentMember } from "@/components/hooks/useCurrentMember";
+import {
+  studentWeightedAvg, subjectAveragesForStudent,
+  monthlyEvolution, trimesterAverages, rankStudents,
+} from "@/utils/gradeUtils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -97,28 +102,28 @@ function FiltersBar({ schoolYears, classes, subjects, students, filters, onChang
 
       {/* 1. Année scolaire */}
       <Select
-        value={filters.schoolYear || ""}
-        onValueChange={v => onChange({ schoolYear: v || null, level: null, classId: null, subjectId: null, studentId: null })}
+        value={filters.schoolYear || "_all"}
+        onValueChange={v => onChange({ schoolYear: v === "_all" ? null : v, level: null, classId: null, subjectId: null, studentId: null })}
       >
         <SelectTrigger className="w-40 h-8 text-xs">
           <SelectValue placeholder="Année scolaire" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value={null}>Toutes les années</SelectItem>
+          <SelectItem value="_all">Toutes les années</SelectItem>
           {schoolYears.map(sy => <SelectItem key={sy.id} value={sy.name}>{sy.name}</SelectItem>)}
         </SelectContent>
       </Select>
 
       {/* 2. Niveau */}
       <Select
-        value={filters.level || ""}
-        onValueChange={v => onChange({ ...filters, level: v || null, classId: null, studentId: null })}
+        value={filters.level || "_all"}
+        onValueChange={v => onChange({ ...filters, level: v === "_all" ? null : v, classId: null, studentId: null })}
       >
         <SelectTrigger className="w-36 h-8 text-xs">
           <SelectValue placeholder="Niveau" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value={null}>Tous les niveaux</SelectItem>
+          <SelectItem value="_all">Tous les niveaux</SelectItem>
           {availableLevels.map(l => (
             <SelectItem key={l} value={l}>{l}</SelectItem>
           ))}
@@ -127,42 +132,42 @@ function FiltersBar({ schoolYears, classes, subjects, students, filters, onChang
 
       {/* 3. Classe */}
       <Select
-        value={filters.classId || ""}
-        onValueChange={v => onChange({ ...filters, classId: v || null, studentId: null })}
+        value={filters.classId || "_all"}
+        onValueChange={v => onChange({ ...filters, classId: v === "_all" ? null : v, studentId: null })}
       >
         <SelectTrigger className="w-36 h-8 text-xs">
           <SelectValue placeholder="Classe" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value={null}>Toutes les classes</SelectItem>
+          <SelectItem value="_all">Toutes les classes</SelectItem>
           {filteredClasses.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
         </SelectContent>
       </Select>
 
       {/* 4. Matière */}
       <Select
-        value={filters.subjectId || ""}
-        onValueChange={v => onChange({ ...filters, subjectId: v || null })}
+        value={filters.subjectId || "_all"}
+        onValueChange={v => onChange({ ...filters, subjectId: v === "_all" ? null : v })}
       >
         <SelectTrigger className="w-36 h-8 text-xs">
           <SelectValue placeholder="Matière" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value={null}>Toutes les matières</SelectItem>
+          <SelectItem value="_all">Toutes les matières</SelectItem>
           {subjects.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
         </SelectContent>
       </Select>
 
       {/* 5. Élève */}
       <Select
-        value={filters.studentId || ""}
-        onValueChange={v => onChange({ ...filters, studentId: v || null })}
+        value={filters.studentId || "_all"}
+        onValueChange={v => onChange({ ...filters, studentId: v === "_all" ? null : v })}
       >
         <SelectTrigger className="w-44 h-8 text-xs">
           <SelectValue placeholder="Élève" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value={null}>Tous les élèves</SelectItem>
+          <SelectItem value="_all">Tous les élèves</SelectItem>
           {filteredStudents.map(s => (
             <SelectItem key={s.id} value={s.id}>{s.first_name} {s.last_name}</SelectItem>
           ))}
@@ -185,97 +190,55 @@ function Student360({ student, grades, exams, subjects, attendance, sanctions, c
 
   const analytics = useMemo(() => {
     if (!student) return null;
-    const studentGrades = grades.filter(g => g.student_id === student.id && !g.absent && g.score != null);
     const classStudents = allStudents.filter(s => s.class_id === student.class_id && s.status === "active");
 
-    const weightedSum = studentGrades.reduce((sum, g) => {
-      const exam = exams.find(e => e.id === g.exam_id);
-      const subj = subjects.find(s => s.id === exam?.subject_id);
-      return sum + g.score * (subj?.coefficient || 1);
-    }, 0);
-    const weightedCoef = studentGrades.reduce((sum, g) => {
-      const exam = exams.find(e => e.id === g.exam_id);
-      const subj = subjects.find(s => s.id === exam?.subject_id);
-      return sum + (subj?.coefficient || 1);
-    }, 0);
-    const overallAvg = weightedCoef > 0 ? weightedSum / weightedCoef : null;
+    // ── Moyennes (via gradeUtils) ────────────────────────────────────────────
+    const overallAvg     = studentWeightedAvg(student.id, grades, exams, subjects);
+    const subjectAvgs    = subjectAveragesForStudent(student.id, grades, exams, subjects);
+    const subjectAverages = subjectAvgs.map(r => ({ name: r.subject.name, avg: r.avg, coef: r.coef }));
 
-    const subjectAverages = subjects.map(sub => {
-      const subExams = exams.filter(e => e.subject_id === sub.id);
-      const subGrades = grades.filter(g => g.student_id === student.id && subExams.some(e => e.id === g.exam_id) && !g.absent && g.score != null);
-      const avg = subGrades.length ? subGrades.reduce((s, g) => s + g.score, 0) / subGrades.length : null;
-      return { name: sub.name, avg, coef: sub.coefficient || 1 };
-    }).filter(s => s.avg !== null);
+    const evolution      = monthlyEvolution(student.id, grades, exams);
+    const byTrimester    = trimesterAverages(student.id, grades, exams, subjects);
+    const trend = byTrimester.T1 !== null && byTrimester.T2 !== null
+      ? byTrimester.T2 - byTrimester.T1
+      : undefined;
 
-    const monthlyData = {};
-    studentGrades.forEach(g => {
-      const exam = exams.find(e => e.id === g.exam_id);
-      if (!exam?.date) return;
-      const month = exam.date.slice(0, 7);
-      if (!monthlyData[month]) monthlyData[month] = { scores: [] };
-      monthlyData[month].scores.push(g.score);
-    });
-    const monthlyEvolution = Object.entries(monthlyData)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([month, d]) => ({
-        month: month.slice(5) + "/" + month.slice(2, 4),
-        avg: d.scores.reduce((a, b) => a + b, 0) / d.scores.length
-      }));
-
-    const t1G = studentGrades.filter(g => exams.find(e => e.id === g.exam_id)?.trimester === "T1");
-    const t2G = studentGrades.filter(g => exams.find(e => e.id === g.exam_id)?.trimester === "T2");
-    const t1Avg = t1G.length ? t1G.reduce((s, g) => s + g.score, 0) / t1G.length : null;
-    const t2Avg = t2G.length ? t2G.reduce((s, g) => s + g.score, 0) / t2G.length : null;
-    const trend = t1Avg !== null && t2Avg !== null ? t2Avg - t1Avg : undefined;
-
-    const stuAtt = attendance.filter(a => a.student_id === student.id);
-    const absences = stuAtt.filter(a => a.status === "absent").length;
-    const lates = stuAtt.filter(a => a.status === "late").length;
+    // ── Assiduité ────────────────────────────────────────────────────────────
+    const stuAtt      = attendance.filter(a => a.student_id === student.id);
+    const absences    = stuAtt.filter(a => a.status === "absent").length;
+    const lates       = stuAtt.filter(a => a.status === "late").length;
     const absenceRate = stuAtt.length > 0 ? (absences / stuAtt.length) * 100 : 0;
 
-    const stuSanctions = sanctions.filter(s => s.student_id === student.id);
+    // ── Sanctions ────────────────────────────────────────────────────────────
+    const stuSanctions    = sanctions.filter(s => s.student_id === student.id);
     const activeSanctions = stuSanctions.filter(s => !s.resolved).length;
-    const behaviorIndex = Math.max(0, 10 - activeSanctions * 2 - lates * 0.2);
+    const behaviorIndex   = Math.max(0, 10 - activeSanctions * 2 - lates * 0.2);
 
-    const calcAvg = (sid) => {
-      const sg = grades.filter(g => g.student_id === sid && !g.absent && g.score != null);
-      const ws = sg.reduce((sum, g) => {
-        const exam = exams.find(e => e.id === g.exam_id);
-        const subj = subjects.find(su => su.id === exam?.subject_id);
-        return sum + g.score * (subj?.coefficient || 1);
-      }, 0);
-      const wc = sg.reduce((sum, g) => {
-        const exam = exams.find(e => e.id === g.exam_id);
-        const subj = subjects.find(su => su.id === exam?.subject_id);
-        return sum + (subj?.coefficient || 1);
-      }, 0);
-      return wc > 0 ? ws / wc : 0;
-    };
+    // ── Classements (via gradeUtils) ─────────────────────────────────────────
+    const classRankings   = rankStudents(classStudents, grades, exams, subjects);
+    const classRank       = classRankings.findIndex(r => r.id === student.id) + 1;
 
-    const classRankings = classStudents.map(s => ({ id: s.id, avg: calcAvg(s.id) })).sort((a, b) => b.avg - a.avg);
-    const classRank = classRankings.findIndex(r => r.id === student.id) + 1;
-
-    const allActive = allStudents.filter(s => s.status === "active");
-    const allRankings = allActive.map(s => ({ id: s.id, avg: calcAvg(s.id) })).sort((a, b) => b.avg - a.avg);
-    const schoolRank = allRankings.findIndex(r => r.id === student.id) + 1;
+    const allRankings     = rankStudents(allStudents.filter(s => s.status === "active"), grades, exams, subjects);
+    const schoolRank      = allRankings.findIndex(r => r.id === student.id) + 1;
 
     const progressionIndex = classRankings.length > 0
       ? Math.round(((classRankings.length - classRank) / classRankings.length) * 100) : 0;
 
+    // ── Risque de décrochage ──────────────────────────────────────────────────
     let dropoutRisk = 0;
-    if (overallAvg !== null && overallAvg < 8) dropoutRisk += 40;
+    if (overallAvg !== null && overallAvg < 8)  dropoutRisk += 40;
     else if (overallAvg !== null && overallAvg < 10) dropoutRisk += 20;
-    if (absenceRate > 20) dropoutRisk += 30;
-    else if (absenceRate > 10) dropoutRisk += 15;
-    if (activeSanctions >= 3) dropoutRisk += 20;
+    if (absenceRate > 20)          dropoutRisk += 30;
+    else if (absenceRate > 10)     dropoutRisk += 15;
+    if (activeSanctions >= 3)      dropoutRisk += 20;
     else if (activeSanctions >= 1) dropoutRisk += 10;
     if (trend !== undefined && trend < -2) dropoutRisk += 10;
     dropoutRisk = Math.min(100, dropoutRisk);
 
     return {
-      overallAvg, subjectAverages, monthlyEvolution, absences, lates, absenceRate,
+      overallAvg, subjectAverages, monthlyEvolution: evolution, absences, lates, absenceRate,
       behaviorIndex, progressionIndex, dropoutRisk, classRank,
-      classSize: classRankings.length, schoolRank, schoolSize: allRankings.length, trend
+      classSize: classRankings.length, schoolRank, schoolSize: allRankings.length, trend,
     };
   }, [student, grades, exams, subjects, attendance, sanctions, allStudents]);
 
@@ -389,7 +352,7 @@ function EmptyChart() {
 }
 
 // ─── Direction overview (global KPIs + charts) ─────────────────────────────────
-function DirectionOverview({ students, grades, exams, subjects, classes, attendance, sanctions, filters }) {
+function DirectionOverview({ students, grades, exams, subjects, classes, attendance, sanctions, filters, allPeriods = [] }) {
   const stats = useMemo(() => {
     let filtStudents = students.filter(s => s.status === "active");
     if (filters.classId) filtStudents = filtStudents.filter(s => s.class_id === filters.classId);
@@ -440,8 +403,14 @@ function DirectionOverview({ students, grades, exams, subjects, classes, attenda
       return { name: sub.name, moyenne: parseFloat(avg), count: se.length };
     }).filter(s => s.count > 0);
 
-    const byTrimester = ["T1", "T2", "T3"].map(t => {
-      const te = filtExams.filter(e => e.trimester === t).map(e => e.id);
+    // Map period.id → ordre (1=T1, 2=T2, 3=T3) pour les examens migrés
+    const periodOrderMap = Object.fromEntries(allPeriods.map(p => [p.id, p.order ?? 1]));
+    const byTrimester = ["T1", "T2", "T3"].map((t, idx) => {
+      const tOrder = idx + 1; // T1=1, T2=2, T3=3
+      const te = filtExams.filter(e =>
+        e.trimester === t ||
+        (!e.trimester && e.period_id && periodOrderMap[e.period_id] === tOrder)
+      ).map(e => e.id);
       const tg = filtGrades.filter(g => te.includes(g.exam_id));
       const avg = tg.length ? (tg.reduce((a, b) => a + b.score, 0) / tg.length).toFixed(1) : null;
       return { name: t, moyenne: avg ? parseFloat(avg) : null };
@@ -545,6 +514,13 @@ function DirectionOverview({ students, grades, exams, subjects, classes, attenda
   );
 }
 
+// ─── Mots-clés de niveau par directeur de cycle (matching souple sur Class.level) ──
+const DIRECTOR_LEVEL_KEYS = {
+  directeur_primaire: ["primaire", "cp", "ce", "cm", "p1", "p2", "p3", "p4", "p5", "p6"],
+  directeur_college:  ["collège", "college", "6e", "5e", "4e", "3e", "6ème", "5ème", "4ème", "3ème", "moyen"],
+  directeur_lycee:    ["lycée", "lycee", "2nde", "seconde", "première", "1ère", "terminale", "ts", "tl"],
+};
+
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 export default function Pilotage() {
   const role = currentRole();
@@ -558,18 +534,61 @@ export default function Pilotage() {
   const { data: sanctions = [] } = useQuery({ queryKey: ["sanctions"], queryFn: () => base44.entities.Sanction.list() });
   const { data: classes = [] } = useQuery({ queryKey: ["classes"], queryFn: () => base44.entities.Class.list() });
   const { data: schoolYears = [] } = useQuery({ queryKey: ["schoolYears"], queryFn: () => base44.entities.SchoolYear.list() });
+  const { data: allPeriods = [] } = useQuery({ queryKey: ["periods"], queryFn: () => base44.entities.Period.list() });
+  const { data: teachers = [] } = useQuery({ queryKey: ["teachers"], queryFn: () => base44.entities.Teacher.list() });
 
   const isParent = role === "parent";
   const isTeacher = role === "enseignant";
   const isDirector = ["directeur_general", "directeur_primaire", "directeur_college", "directeur_lycee"].includes(role);
   const isGeneralDirector = role === "directeur_general";
 
-  // For parent: find student(s) by parent_email
+  const { myChildren, myTeacherSubjectIds } = useCurrentMember();
+
+  // For parent: use linked children from session
   const parentStudents = useMemo(() => {
     if (!isParent) return [];
-    // In demo mode, show first active students as fallback
+    if (myChildren.length > 0) return myChildren;
+    // Fallback: show first 3 active students in demo mode
     return students.filter(s => s.status === "active").slice(0, 3);
-  }, [students, isParent]);
+  }, [students, isParent, myChildren]);
+
+  // ── Scope par rôle ──────────────────────────────────────────────────────────
+
+  // Directeurs de cycle : filtrage par mots-clés sur Class.level (fallback = tout)
+  const scopedClasses = useMemo(() => {
+    const keywords = DIRECTOR_LEVEL_KEYS[role];
+    if (!keywords) return classes;
+    const filtered = classes.filter(c =>
+      keywords.some(kw => (c.level || "").toLowerCase().includes(kw.toLowerCase()))
+    );
+    return filtered.length > 0 ? filtered : classes; // fallback si aucun niveau ne matche
+  }, [classes, role]);
+
+  // Enseignant : classes où il a des examens via ses matières
+  const teacherClassIds = useMemo(() => {
+    if (!isTeacher || !myTeacherSubjectIds?.length) return null;
+    return [...new Set(
+      exams
+        .filter(e => myTeacherSubjectIds.includes(e.subject_id) && e.class_id)
+        .map(e => e.class_id)
+    )];
+  }, [isTeacher, myTeacherSubjectIds, exams]);
+
+  // Classes finales à exposer selon le rôle
+  const displayClasses = useMemo(() => {
+    if (isTeacher && teacherClassIds?.length) return classes.filter(c => teacherClassIds.includes(c.id));
+    if (isParent) return classes.filter(c => parentStudents.some(s => s.class_id === c.id));
+    return scopedClasses;
+  }, [isTeacher, teacherClassIds, isParent, parentStudents, classes, scopedClasses]);
+
+  // Élèves finaux à exposer selon le rôle
+  const displayStudents = useMemo(() => {
+    if (isParent) return parentStudents;
+    const scopeClassIds = displayClasses.map(c => c.id);
+    if (scopeClassIds.length < classes.length)
+      return students.filter(s => scopeClassIds.includes(s.class_id));
+    return students;
+  }, [isParent, parentStudents, displayClasses, classes, students]);
 
   // The student to display (for parent auto-select, for others via filter)
   const selectedStudent = useMemo(() => {
@@ -653,8 +672,8 @@ export default function Pilotage() {
         {/* Performance classes (enseignant) */}
         {tabs.includes("performance") && (
           <TabsContent value="performance" className="mt-4 space-y-4">
-            <FiltersBar schoolYears={schoolYears} classes={classes} subjects={subjects} students={students} filters={filters} onChange={setFilters} />
-            <TeacherPerformanceView classes={classes} students={students} grades={grades} exams={exams} subjects={subjects} attendance={attendance} />
+            <FiltersBar schoolYears={schoolYears} classes={displayClasses} subjects={subjects} students={displayStudents} filters={filters} onChange={setFilters} />
+            <TeacherPerformanceView classes={displayClasses} students={displayStudents} grades={grades} exams={exams} subjects={subjects} attendance={attendance} />
           </TabsContent>
         )}
 
@@ -663,7 +682,7 @@ export default function Pilotage() {
           <TabsContent value="strategique" className="mt-4">
             <DirectionDashboardStrategic
               students={students}
-              teachers={[]}
+              teachers={teachers}
               classes={classes}
               subjects={subjects}
               events={[]}
@@ -677,9 +696,9 @@ export default function Pilotage() {
         {tabs.includes("vue_globale") && (
           <TabsContent value="vue_globale" className="mt-4 space-y-4">
             {showFilters && (
-              <FiltersBar schoolYears={schoolYears} classes={classes} subjects={subjects} students={students} filters={filters} onChange={setFilters} />
+              <FiltersBar schoolYears={schoolYears} classes={displayClasses} subjects={subjects} students={displayStudents} filters={filters} onChange={setFilters} />
             )}
-            <DirectionOverview students={students} grades={grades} exams={exams} subjects={subjects} classes={classes} attendance={attendance} sanctions={sanctions} filters={filters} />
+            <DirectionOverview students={displayStudents} grades={grades} exams={exams} subjects={subjects} classes={displayClasses} attendance={attendance} sanctions={sanctions} filters={filters} allPeriods={allPeriods} />
           </TabsContent>
         )}
 
@@ -700,11 +719,11 @@ export default function Pilotage() {
 
             {/* Teacher/Director: full filters */}
             {showFilters && (
-              <FiltersBar schoolYears={schoolYears} classes={classes} subjects={subjects} students={students} filters={filters} onChange={setFilters} />
+              <FiltersBar schoolYears={schoolYears} classes={displayClasses} subjects={subjects} students={displayStudents} filters={filters} onChange={setFilters} />
             )}
 
             {selectedStudent ? (
-              <Student360 student={selectedStudent} grades={grades} exams={exams} subjects={subjects} attendance={attendance} sanctions={sanctions} classes={classes} allStudents={students} />
+              <Student360 student={selectedStudent} grades={grades} exams={exams} subjects={subjects} attendance={attendance} sanctions={sanctions} classes={displayClasses} allStudents={displayStudents} />
             ) : (
               <Card>
                 <CardContent className="py-16 text-center text-slate-400">
@@ -735,8 +754,8 @@ export default function Pilotage() {
         {tabs.includes("predictive") && (
           <TabsContent value="predictive" className="mt-4">
             <PredictiveAI
-              classes={classes}
-              students={students}
+              classes={displayClasses}
+              students={displayStudents}
               grades={grades}
               exams={exams}
               subjects={subjects}
@@ -750,8 +769,8 @@ export default function Pilotage() {
         {tabs.includes("psycho") && (
           <TabsContent value="psycho" className="mt-4">
             <PsychoPedagogicalProfile
-              classes={classes}
-              students={students}
+              classes={displayClasses}
+              students={displayStudents}
               grades={grades}
               exams={exams}
               subjects={subjects}

@@ -20,6 +20,7 @@ import {
   ChevronRight,
   Loader2,
   AlertTriangle,
+  CalendarDays,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -63,7 +64,32 @@ export default function MobileSaisie() {
     enabled: !!selectedClass,
   });
 
+  const { data: subjects = [] } = useQuery({
+    queryKey: ["subjects_all"],
+    queryFn: () => base44.entities.Subject.list(),
+  });
+
+  const { data: periods = [] } = useQuery({
+    queryKey: ["periods"],
+    queryFn: () => base44.entities.Period.list(),
+  });
+  const periodMap = Object.fromEntries(periods.map(p => [p.id, p]));
+
   const today = new Date().toISOString().split("T")[0];
+
+  // Helpers date
+  const now = new Date();
+  const DAY_NAMES  = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
+  const MONTH_NAMES = ["janv.", "févr.", "mars", "avr.", "mai", "juin",
+                       "juil.", "août", "sept.", "oct.", "nov.", "déc."];
+  const todayDayNum  = now.getDate();
+  const todayDayName = DAY_NAMES[now.getDay()];
+  const todayMonth   = MONTH_NAMES[now.getMonth()];
+  const todayYear    = now.getFullYear();
+
+  // Exam + matière sélectionnés
+  const selectedExamObj = exams.find(e => e.id === selectedExam);
+  const selectedSubject  = subjects.find(s => s.id === selectedExamObj?.subject_id);
 
   const handleAttendanceChange = (studentId, status) => {
     setAttendanceData((prev) => ({ ...prev, [studentId]: status }));
@@ -152,15 +178,31 @@ export default function MobileSaisie() {
   return (
     <div className="max-w-lg mx-auto space-y-4">
       {/* Mobile Header */}
-      <div className="bg-gradient-to-r from-green-600 to-emerald-700 rounded-2xl p-6 text-white">
-        <div className="flex items-center gap-3 mb-3">
-          <span className="text-3xl">📱</span>
-          <div>
-            <h1 className="text-xl font-bold">Saisie Rapide</h1>
-            <p className="text-white/80 text-sm">Interface enseignant mobile</p>
+      <div className="bg-gradient-to-r from-green-600 to-emerald-700 rounded-2xl p-5 text-white">
+        <div className="flex items-center justify-between">
+          {/* Titre */}
+          <div className="flex items-center gap-3">
+            <span className="text-3xl">📱</span>
+            <div>
+              <h1 className="text-xl font-bold">Saisie Rapide</h1>
+              <p className="text-white/75 text-sm">Interface enseignant mobile</p>
+            </div>
+          </div>
+
+          {/* Bloc date mini-calendrier */}
+          <div className="flex flex-col items-center bg-white/20 backdrop-blur-sm rounded-2xl px-4 py-2.5 text-center min-w-[60px]">
+            <span className="text-[11px] font-bold uppercase tracking-wide text-white/80">
+              {todayDayName}
+            </span>
+            <span className="text-3xl font-extrabold leading-none text-white">
+              {todayDayNum}
+            </span>
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-white/80">
+              {todayMonth}
+            </span>
+            <span className="text-[10px] text-white/60 mt-0.5">{todayYear}</span>
           </div>
         </div>
-        <p className="text-white/70 text-xs">{new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}</p>
       </div>
 
       {/* Class selector */}
@@ -330,15 +372,68 @@ export default function MobileSaisie() {
                     <SelectValue placeholder="Choisir un examen..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {exams.map((e) => (
-                      <SelectItem key={e.id} value={e.id}>
-                        {e.title} ({e.trimester})
-                      </SelectItem>
-                    ))}
+                    {exams.map((e) => {
+                      const subj = subjects.find(s => s.id === e.subject_id);
+                      const periodLabel = e.period_id && periodMap[e.period_id]
+                        ? periodMap[e.period_id].name
+                        : e.trimester || null;
+                      return (
+                        <SelectItem key={e.id} value={e.id}>
+                          {subj ? `${subj.name} — ` : ""}{e.title}{periodLabel ? ` (${periodLabel})` : ""}
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </CardContent>
             </Card>
+
+            {/* Bloc matière + détails examen sélectionné */}
+            {selectedExamObj && (
+              <div className={`flex items-stretch gap-3 rounded-xl p-3 border ${
+                selectedSubject
+                  ? "bg-indigo-50 border-indigo-200"
+                  : "bg-slate-50 border-slate-200"
+              }`}>
+                {/* Icône matière */}
+                <div className={`w-14 flex flex-col items-center justify-center rounded-xl text-white flex-shrink-0 ${
+                  selectedSubject ? "bg-indigo-600" : "bg-slate-500"
+                }`}>
+                  <BookOpen className="w-5 h-5 mb-1" />
+                  {selectedExamObj.max_score && (
+                    <span className="text-[11px] font-bold leading-none">/{selectedExamObj.max_score}</span>
+                  )}
+                </div>
+                {/* Détails */}
+                <div className="flex flex-col justify-center min-w-0">
+                  <p className={`text-base font-bold leading-tight truncate ${
+                    selectedSubject ? "text-indigo-800" : "text-slate-700"
+                  }`}>
+                    {selectedSubject?.name ?? "Matière non définie"}
+                  </p>
+                  <p className="text-sm text-slate-600 font-medium truncate">
+                    {selectedExamObj.title}
+                  </p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    {(selectedExamObj.period_id || selectedExamObj.trimester) && (
+                      <span className="text-xs bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded font-medium">
+                        {selectedExamObj.period_id && periodMap[selectedExamObj.period_id]
+                          ? periodMap[selectedExamObj.period_id].name
+                          : selectedExamObj.trimester}
+                      </span>
+                    )}
+                    {selectedExamObj.date && (
+                      <span className="text-xs text-slate-400 flex items-center gap-1">
+                        <CalendarDays className="w-3 h-3" />{selectedExamObj.date}
+                      </span>
+                    )}
+                    {selectedExamObj.coefficient && (
+                      <span className="text-xs text-slate-400">coeff. {selectedExamObj.coefficient}</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {selectedExam && (
               <>

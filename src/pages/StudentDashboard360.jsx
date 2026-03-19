@@ -1,6 +1,10 @@
 import React, { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import {
+  studentWeightedAvg, subjectAveragesForStudent,
+  trimesterAverages, monthlyEvolution, rankStudents,
+} from "@/utils/gradeUtils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -87,119 +91,57 @@ export default function StudentDashboard360() {
   const analytics = useMemo(() => {
     if (!effectiveStudentId) return null;
 
-    const studentExamIds = exams.map(e => e.id);
-    const studentGrades = grades.filter(g => g.student_id === effectiveStudentId && !g.absent && g.score != null);
     const classStudents = students.filter(s => s.class_id === student?.class_id && s.status === "active");
 
-    // Overall average
-    const weightedSum = studentGrades.reduce((sum, g) => {
-      const exam = exams.find(e => e.id === g.exam_id);
-      const subj = subjects.find(s => s.id === exam?.subject_id);
-      return sum + g.score * (subj?.coefficient || 1);
-    }, 0);
-    const weightedCoef = studentGrades.reduce((sum, g) => {
-      const exam = exams.find(e => e.id === g.exam_id);
-      const subj = subjects.find(s => s.id === exam?.subject_id);
-      return sum + (subj?.coefficient || 1);
-    }, 0);
-    const overallAvg = weightedCoef > 0 ? weightedSum / weightedCoef : null;
+    // ── Moyennes (via gradeUtils) ────────────────────────────────────────────
+    const overallAvg   = studentWeightedAvg(effectiveStudentId, grades, exams, subjects);
+    const subjectAvgs  = subjectAveragesForStudent(effectiveStudentId, grades, exams, subjects);
+    // Convertir en format attendu par les graphiques recharts existants
+    const subjectAverages = subjectAvgs.map(r => ({ name: r.subject.name, avg: r.avg, coef: r.coef }));
 
-    // Per subject averages
-    const subjectAverages = subjects.map(sub => {
-      const subExams = exams.filter(e => e.subject_id === sub.id);
-      const subGrades = grades.filter(g => g.student_id === effectiveStudentId && subExams.some(e => e.id === g.exam_id) && !g.absent && g.score != null);
-      const avg = subGrades.length ? subGrades.reduce((s, g) => s + g.score, 0) / subGrades.length : null;
-      return { name: sub.name, avg, coef: sub.coefficient || 1 };
-    }).filter(s => s.avg !== null);
+    const evolution    = monthlyEvolution(effectiveStudentId, grades, exams);
+    const byTrimester  = trimesterAverages(effectiveStudentId, grades, exams, subjects);
+    const trend = byTrimester.T1 !== null && byTrimester.T2 !== null
+      ? byTrimester.T2 - byTrimester.T1
+      : undefined;
 
-    // Monthly evolution
-    const monthlyData = {};
-    studentGrades.forEach(g => {
-      const exam = exams.find(e => e.id === g.exam_id);
-      if (!exam?.date) return;
-      const month = exam.date.slice(0, 7);
-      if (!monthlyData[month]) monthlyData[month] = { scores: [], month };
-      monthlyData[month].scores.push(g.score);
-    });
-    const monthlyEvolution = Object.entries(monthlyData)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([month, d]) => ({
-        month: month.slice(5) + "/" + month.slice(2, 4),
-        avg: d.scores.reduce((a, b) => a + b, 0) / d.scores.length
-      }));
-
-    // Trimester trend
-    const t1Grades = studentGrades.filter(g => exams.find(e => e.id === g.exam_id)?.trimester === "T1");
-    const t2Grades = studentGrades.filter(g => exams.find(e => e.id === g.exam_id)?.trimester === "T2");
-    const t1Avg = t1Grades.length ? t1Grades.reduce((s, g) => s + g.score, 0) / t1Grades.length : null;
-    const t2Avg = t2Grades.length ? t2Grades.reduce((s, g) => s + g.score, 0) / t2Grades.length : null;
-    const trend = t1Avg !== null && t2Avg !== null ? t2Avg - t1Avg : undefined;
-
-    // Attendance
-    const stuAtt = attendance.filter(a => a.student_id === effectiveStudentId);
-    const absences = stuAtt.filter(a => a.status === "absent").length;
-    const lates = stuAtt.filter(a => a.status === "late").length;
+    // ── Assiduité ────────────────────────────────────────────────────────────
+    const stuAtt    = attendance.filter(a => a.student_id === effectiveStudentId);
+    const absences  = stuAtt.filter(a => a.status === "absent").length;
+    const lates     = stuAtt.filter(a => a.status === "late").length;
     const absenceRate = stuAtt.length > 0 ? (absences / stuAtt.length) * 100 : 0;
 
-    // Sanctions
-    const stuSanctions = sanctions.filter(s => s.student_id === effectiveStudentId);
+    // ── Sanctions ────────────────────────────────────────────────────────────
+    const stuSanctions    = sanctions.filter(s => s.student_id === effectiveStudentId);
     const activeSanctions = stuSanctions.filter(s => !s.resolved).length;
-    const behaviorIndex = Math.max(0, 10 - activeSanctions * 2 - lates * 0.2);
+    const behaviorIndex   = Math.max(0, 10 - activeSanctions * 2 - lates * 0.2);
 
-    // Class ranking
-    const classRankings = classStudents.map(s => {
-      const sg = grades.filter(g => g.student_id === s.id && !g.absent && g.score != null);
-      const ws = sg.reduce((sum, g) => {
-        const exam = exams.find(e => e.id === g.exam_id);
-        const subj = subjects.find(su => su.id === exam?.subject_id);
-        return sum + g.score * (subj?.coefficient || 1);
-      }, 0);
-      const wc = sg.reduce((sum, g) => {
-        const exam = exams.find(e => e.id === g.exam_id);
-        const subj = subjects.find(su => su.id === exam?.subject_id);
-        return sum + (subj?.coefficient || 1);
-      }, 0);
-      return { id: s.id, avg: wc > 0 ? ws / wc : 0 };
-    }).sort((a, b) => b.avg - a.avg);
-    const classRank = classRankings.findIndex(r => r.id === effectiveStudentId) + 1;
+    // ── Classements (via gradeUtils) ─────────────────────────────────────────
+    const classRankings   = rankStudents(classStudents, grades, exams, subjects);
+    const classRank       = classRankings.findIndex(r => r.id === effectiveStudentId) + 1;
 
-    // School ranking
-    const allRankings = students.filter(s => s.status === "active").map(s => {
-      const sg = grades.filter(g => g.student_id === s.id && !g.absent && g.score != null);
-      const ws = sg.reduce((sum, g) => {
-        const exam = exams.find(e => e.id === g.exam_id);
-        const subj = subjects.find(su => su.id === exam?.subject_id);
-        return sum + g.score * (subj?.coefficient || 1);
-      }, 0);
-      const wc = sg.reduce((sum, g) => {
-        const exam = exams.find(e => e.id === g.exam_id);
-        const subj = subjects.find(su => su.id === exam?.subject_id);
-        return sum + (subj?.coefficient || 1);
-      }, 0);
-      return { id: s.id, avg: wc > 0 ? ws / wc : 0 };
-    }).sort((a, b) => b.avg - a.avg);
-    const schoolRank = allRankings.findIndex(r => r.id === effectiveStudentId) + 1;
+    const allRankings     = rankStudents(students.filter(s => s.status === "active"), grades, exams, subjects);
+    const schoolRank      = allRankings.findIndex(r => r.id === effectiveStudentId) + 1;
 
-    // Progression index (percentile in class)
     const progressionIndex = classRankings.length > 0
       ? Math.round(((classRankings.length - classRank) / classRankings.length) * 100)
       : 0;
 
-    // Dropout risk
+    // ── Risque de décrochage ──────────────────────────────────────────────────
     let dropoutRisk = 0;
-    if (overallAvg !== null && overallAvg < 8) dropoutRisk += 40;
+    if (overallAvg !== null && overallAvg < 8)  dropoutRisk += 40;
     else if (overallAvg !== null && overallAvg < 10) dropoutRisk += 20;
-    if (absenceRate > 20) dropoutRisk += 30;
-    else if (absenceRate > 10) dropoutRisk += 15;
-    if (activeSanctions >= 3) dropoutRisk += 20;
+    if (absenceRate > 20)        dropoutRisk += 30;
+    else if (absenceRate > 10)   dropoutRisk += 15;
+    if (activeSanctions >= 3)    dropoutRisk += 20;
     else if (activeSanctions >= 1) dropoutRisk += 10;
     if (trend !== undefined && trend < -2) dropoutRisk += 10;
     dropoutRisk = Math.min(100, dropoutRisk);
 
     return {
-      overallAvg, subjectAverages, monthlyEvolution, absences, lates, absenceRate,
+      overallAvg, subjectAverages, monthlyEvolution: evolution, absences, lates, absenceRate,
       behaviorIndex, progressionIndex, dropoutRisk, classRank,
-      classSize: classRankings.length, schoolRank, schoolSize: allRankings.length, trend
+      classSize: classRankings.length, schoolRank, schoolSize: allRankings.length, trend,
     };
   }, [effectiveStudentId, students, grades, exams, subjects, attendance, sanctions, student]);
 

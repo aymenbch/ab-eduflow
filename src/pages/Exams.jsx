@@ -33,7 +33,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { MoreHorizontal, Pencil, Trash2, FileSpreadsheet, Loader2 } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash2, FileSpreadsheet, Loader2, Lock, LockOpen, RefreshCw } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -48,7 +48,15 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Link } from "react-router-dom";
 import { useTeacherProfile } from "@/components/teachers/useTeacherProfile";
+import { getSession } from "@/components/auth/appAuth";
 import { createPageUrl } from "@/utils";
+
+const GRADING_SCALES = {
+  "/20": "/20 (numérique)",
+  "/100": "/100 (numérique)",
+  letters: "Lettres A–F",
+  competencies: "Compétences",
+};
 
 const EXAM_TYPES = {
   controle: "Contrôle",
@@ -58,12 +66,24 @@ const EXAM_TYPES = {
   tp: "TP",
 };
 
+/**
+ * Dérive le trimestre legacy (T1/T2/T3) à partir de l'ordre d'une Period.
+ * Utile pour conserver la compatibilité avec gradeUtils.
+ */
+function periodOrderToTrimester(order) {
+  if (order === 1) return "T1";
+  if (order === 2) return "T2";
+  return "T3";
+}
+
 export default function Exams() {
   const [formOpen, setFormOpen] = useState(false);
   const [selectedExam, setSelectedExam] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [examToDelete, setExamToDelete] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [migrating, setMigrating] = useState(false);
+  const [migrateResult, setMigrateResult] = useState(null);
   const [formData, setFormData] = useState({
     title: "",
     subject_id: "",
@@ -73,12 +93,16 @@ export default function Exams() {
     type: "controle",
     max_score: 20,
     coefficient: 1,
-    trimester: "T1",
+    period_id: "",
+    trimester: "",
     description: "",
+    grading_scale: "/20",
   });
 
   const queryClient = useQueryClient();
   const { mySubjectIds, isTeacherRole, teacherProfile } = useTeacherProfile();
+  const session = getSession();
+  const isAdmin = ["admin_systeme", "directeur_general", "directeur_primaire", "directeur_college", "directeur_lycee"].includes(session?.role);
 
   const { data: examsAll = [], isLoading } = useQuery({
     queryKey: ["exams"],
@@ -104,9 +128,28 @@ export default function Exams() {
     queryFn: () => base44.entities.Teacher.list(),
   });
 
+  // Année scolaire active + ses périodes
+  const { data: schoolYears = [] } = useQuery({
+    queryKey: ["schoolYears"],
+    queryFn: () => base44.entities.SchoolYear.list(),
+  });
+  const activeYear = schoolYears.find(y => y.status === "active");
+
+  const { data: periodsAll = [] } = useQuery({
+    queryKey: ["periods", activeYear?.id],
+    queryFn: () => base44.entities.Period.filter({ school_year_id: activeYear.id }),
+    enabled: !!activeYear?.id,
+  });
+  const periods = [...periodsAll].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+  // Tabs: dynamic if periods exist, legacy T1/T2/T3 otherwise
+  const usePeriods = periods.length > 0;
+  const legacyTrimesters = ["T1", "T2", "T3"];
+
   const classMap = Object.fromEntries(classes.map((c) => [c.id, c]));
   const subjectMap = Object.fromEntries(subjects.map((s) => [s.id, s]));
   const teacherMap = Object.fromEntries(teachers.map((t) => [t.id, t]));
+  const periodMap = Object.fromEntries(periods.map((p) => [p.id, p]));
 
   // Filtrer les matières disponibles pour l'enseignant connecté
   const availableSubjects = isTeacherRole
@@ -115,6 +158,7 @@ export default function Exams() {
 
   const handleNew = () => {
     setSelectedExam(null);
+    const defaultPeriod = periods[0] || null;
     setFormData({
       title: "",
       subject_id: "",
@@ -124,8 +168,10 @@ export default function Exams() {
       type: "controle",
       max_score: 20,
       coefficient: 1,
-      trimester: "T1",
+      period_id: defaultPeriod?.id || "",
+      trimester: defaultPeriod ? periodOrderToTrimester(defaultPeriod.order ?? 1) : "",
       description: "",
+      grading_scale: "/20",
     });
     setFormOpen(true);
   };
@@ -141,8 +187,10 @@ export default function Exams() {
       type: exam.type || "controle",
       max_score: exam.max_score || 20,
       coefficient: exam.coefficient || 1,
-      trimester: exam.trimester || "T1",
+      period_id: exam.period_id || "",
+      trimester: exam.trimester || "",
       description: exam.description || "",
+      grading_scale: exam.grading_scale || "/20",
     });
     setFormOpen(true);
   };
@@ -177,6 +225,28 @@ export default function Exams() {
     }
   };
 
+  const handleToggleLock = async (exam) => {
+    await base44.entities.Exam.update(exam.id, { locked: !exam.locked });
+    queryClient.invalidateQueries({ queryKey: ["exams"] });
+  };
+
+  const handleMigrateExams = async () => {
+    setMigrating(true);
+    setMigrateResult(null);
+    try {
+      const result = await base44.functions.invoke("migrateExamsToPeriods", {});
+      setMigrateResult(result);
+      // Rafraîchir les données
+      queryClient.invalidateQueries({ queryKey: ["exams"] });
+      queryClient.invalidateQueries({ queryKey: ["periods"] });
+      queryClient.invalidateQueries({ queryKey: ["schoolYears"] });
+    } catch (err) {
+      setMigrateResult({ error: err.message || "Erreur lors de la migration" });
+    } finally {
+      setMigrating(false);
+    }
+  };
+
   const typeColors = {
     controle: "bg-blue-100 text-blue-800",
     devoir: "bg-green-100 text-green-800",
@@ -190,10 +260,27 @@ export default function Exams() {
       header: "Examen",
       cell: (row) => (
         <div>
-          <p className="font-medium">{row.title}</p>
-          <div className="flex items-center gap-2 mt-1">
+          <div className="flex items-center gap-2">
+            <p className="font-medium">{row.title}</p>
+            {row.locked && (
+              <Lock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+            )}
+          </div>
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
             <Badge className={typeColors[row.type]}>{EXAM_TYPES[row.type]}</Badge>
-            <Badge variant="outline">{row.trimester}</Badge>
+            {row.period_id && periodMap[row.period_id] && (
+              <Badge variant="outline" className="border-indigo-300 text-indigo-600">
+                {periodMap[row.period_id].name}
+              </Badge>
+            )}
+            {!row.period_id && row.trimester && (
+              <Badge variant="outline">{row.trimester}</Badge>
+            )}
+            {row.grading_scale && row.grading_scale !== "/20" && (
+              <Badge variant="outline" className="border-slate-300 text-slate-500 text-[10px]">
+                {row.grading_scale === "letters" ? "A–F" : row.grading_scale === "competencies" ? "Compétences" : row.grading_scale}
+              </Badge>
+            )}
           </div>
         </div>
       ),
@@ -251,16 +338,29 @@ export default function Exams() {
                 Saisir les notes
               </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleEdit(row)}>
+            <DropdownMenuItem onClick={() => handleEdit(row)} disabled={row.locked && !isAdmin}>
               <Pencil className="w-4 h-4 mr-2" />
               Modifier
             </DropdownMenuItem>
+            {isAdmin && (
+              <DropdownMenuItem
+                onClick={() => handleToggleLock(row)}
+                className={row.locked ? "text-green-700" : "text-amber-700"}
+              >
+                {row.locked ? (
+                  <><LockOpen className="w-4 h-4 mr-2" />Déverrouiller</>
+                ) : (
+                  <><Lock className="w-4 h-4 mr-2" />Verrouiller</>
+                )}
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem
               className="text-red-600"
               onClick={() => {
                 setExamToDelete(row);
                 setDeleteDialogOpen(true);
               }}
+              disabled={row.locked && !isAdmin}
             >
               <Trash2 className="w-4 h-4 mr-2" />
               Supprimer
@@ -280,26 +380,81 @@ export default function Exams() {
         actionLabel="Nouvel examen"
       />
 
-      <Tabs defaultValue="T1" className="mb-6">
+      {/* Bandeau de migration — visible uniquement pour les admins et quand il existe des examens legacy */}
+      {isAdmin && !usePeriods && (
+        <div className="mb-4 flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+          <RefreshCw className="w-4 h-4 text-amber-600 shrink-0" />
+          <div className="flex-1 text-sm text-amber-800">
+            <span className="font-semibold">Migration disponible :</span> Liez vos examens existants (T1/T2/T3) à des périodes officielles pour activer le suivi par période.
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-amber-400 text-amber-700 hover:bg-amber-100 shrink-0"
+            onClick={handleMigrateExams}
+            disabled={migrating}
+          >
+            {migrating ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <RefreshCw className="w-3.5 h-3.5 mr-1" />}
+            {migrating ? "Migration..." : "Lancer la migration"}
+          </Button>
+        </div>
+      )}
+
+      {/* Résultat de la migration */}
+      {migrateResult && (
+        <div className={`mb-4 flex items-start gap-3 rounded-xl px-4 py-3 text-sm ${migrateResult.error ? "bg-red-50 border border-red-200 text-red-800" : "bg-green-50 border border-green-200 text-green-800"}`}>
+          {migrateResult.error ? (
+            <span>❌ {migrateResult.error}</span>
+          ) : (
+            <span>
+              ✅ Migration réussie — Année : <strong>{migrateResult.schoolYear}</strong> —{" "}
+              {migrateResult.periodsCreated?.length > 0
+                ? `${migrateResult.periodsCreated.length} période(s) créée(s) (${migrateResult.periodsCreated.join(", ")})`
+                : "Périodes déjà existantes"} —{" "}
+              <strong>{migrateResult.examsUpdated}</strong> examen(s) mis à jour.
+            </span>
+          )}
+          <button className="ml-auto text-xs opacity-60 hover:opacity-100" onClick={() => setMigrateResult(null)}>✕</button>
+        </div>
+      )}
+
+      <Tabs defaultValue="all" className="mb-6">
         <TabsList>
           <TabsTrigger value="all">Tous</TabsTrigger>
-          <TabsTrigger value="T1">Trimestre 1</TabsTrigger>
-          <TabsTrigger value="T2">Trimestre 2</TabsTrigger>
-          <TabsTrigger value="T3">Trimestre 3</TabsTrigger>
+          {usePeriods
+            ? periods.map((p) => (
+                <TabsTrigger key={p.id} value={p.id}>
+                  {p.name}
+                  {p.status === "closed" && <span className="ml-1 text-[10px] opacity-50">✓</span>}
+                </TabsTrigger>
+              ))
+            : legacyTrimesters.map((t) => (
+                <TabsTrigger key={t} value={t}>{t}</TabsTrigger>
+              ))}
         </TabsList>
 
         <TabsContent value="all">
           <DataTable columns={columns} data={exams} isLoading={isLoading} />
         </TabsContent>
-        {["T1", "T2", "T3"].map((t) => (
-          <TabsContent key={t} value={t}>
-            <DataTable
-              columns={columns}
-              data={exams.filter((e) => e.trimester === t)}
-              isLoading={isLoading}
-            />
-          </TabsContent>
-        ))}
+        {usePeriods
+          ? periods.map((p) => (
+              <TabsContent key={p.id} value={p.id}>
+                <DataTable
+                  columns={columns}
+                  data={exams.filter((e) => e.period_id === p.id)}
+                  isLoading={isLoading}
+                />
+              </TabsContent>
+            ))
+          : legacyTrimesters.map((t) => (
+              <TabsContent key={t} value={t}>
+                <DataTable
+                  columns={columns}
+                  data={exams.filter((e) => e.trimester === t)}
+                  isLoading={isLoading}
+                />
+              </TabsContent>
+            ))}
       </Tabs>
 
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
@@ -380,24 +535,66 @@ export default function Exams() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Trimestre</Label>
+                <Label>Période</Label>
+                {usePeriods ? (
+                  <Select
+                    value={formData.period_id}
+                    onValueChange={(value) => {
+                      const p = periods.find(x => x.id === value);
+                      setFormData({
+                        ...formData,
+                        period_id: value,
+                        trimester: p ? periodOrderToTrimester(p.order ?? 1) : "",
+                      });
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner une période" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {periods.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Select
+                    value={formData.trimester}
+                    onValueChange={(value) => setFormData({ ...formData, trimester: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Trimestre" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="T1">Trimestre 1</SelectItem>
+                      <SelectItem value="T2">Trimestre 2</SelectItem>
+                      <SelectItem value="T3">Trimestre 3</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Échelle de notation</Label>
                 <Select
-                  value={formData.trimester}
-                  onValueChange={(value) => setFormData({ ...formData, trimester: value })}
+                  value={formData.grading_scale}
+                  onValueChange={(v) => {
+                    const autoMax = v === "/100" ? 100 : v === "letters" ? 20 : v === "competencies" ? 3 : 20;
+                    setFormData({ ...formData, grading_scale: v, max_score: autoMax });
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="T1">Trimestre 1</SelectItem>
-                    <SelectItem value="T2">Trimestre 2</SelectItem>
-                    <SelectItem value="T3">Trimestre 3</SelectItem>
+                    {Object.entries(GRADING_SCALES).map(([key, label]) => (
+                      <SelectItem key={key} value={key}>{label}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label>Date *</Label>
                 <Input
@@ -407,8 +604,11 @@ export default function Exams() {
                   required
                 />
               </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Barème</Label>
+                <Label>Barème (note max)</Label>
                 <Input
                   type="number"
                   value={formData.max_score}

@@ -364,8 +364,8 @@ function PredictionCard({ prediction, student }) {
 
 // ─── Main Component ─────────────────────────────────────────────────────────────
 export default function PredictiveAI({ classes, students, grades, exams, subjects, attendance, sanctions }) {
-  const [filterClass, setFilterClass] = useState("");
-  const [filterRisk, setFilterRisk] = useState("");
+  const [filterClass, setFilterClass] = useState("_all");
+  const [filterRisk, setFilterRisk] = useState("_all");
   const [globalAI, setGlobalAI] = useState(null);
   const [loadingGlobalAI, setLoadingGlobalAI] = useState(false);
   const [model, setModel] = useState("hybrid");
@@ -379,8 +379,8 @@ export default function PredictiveAI({ classes, students, grades, exams, subject
 
   const filtered = useMemo(() => {
     let res = predictions;
-    if (filterClass) res = res.filter(p => p.student.class_id === filterClass);
-    if (filterRisk) {
+    if (filterClass && filterClass !== "_all") res = res.filter(p => p.student.class_id === filterClass);
+    if (filterRisk && filterRisk !== "_all") {
       res = res.filter(p => {
         if (filterRisk === "critique") return p.pred.failureLevel === "critique" || p.pred.dropoutLevel === "critique";
         if (filterRisk === "eleve") return p.pred.failureLevel === "eleve" || p.pred.dropoutLevel === "eleve";
@@ -563,14 +563,14 @@ export default function PredictiveAI({ classes, students, grades, exams, subject
         <Select value={filterClass} onValueChange={setFilterClass}>
           <SelectTrigger className="w-40 h-8 text-xs"><SelectValue placeholder="Toutes les classes" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value={null}>Toutes les classes</SelectItem>
+            <SelectItem value="_all">Toutes les classes</SelectItem>
             {classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={filterRisk} onValueChange={setFilterRisk}>
           <SelectTrigger className="w-44 h-8 text-xs"><SelectValue placeholder="Filtrer par risque" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value={null}>Tous les profils</SelectItem>
+            <SelectItem value="_all">Tous les profils</SelectItem>
             <SelectItem value="critique">🔴 Risque critique</SelectItem>
             <SelectItem value="eleve">🟠 Risque élevé</SelectItem>
             <SelectItem value="faible">🟢 Risque faible</SelectItem>

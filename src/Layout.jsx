@@ -2,75 +2,59 @@ import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
-  LayoutDashboard,
-  Users,
-  GraduationCap,
-  BookOpen,
-  Calendar,
-  ClipboardList,
-  MessageSquare,
-  FileText,
-  AlertTriangle,
-  Menu,
-  X,
-  School,
-  UserCog,
-  Clock,
-  Bell,
-  ChevronDown,
-  LogOut,
-  RefreshCw,
-  DollarSign,
-  ShieldCheck,
-  BarChart2,
-  CalendarDays,
-  Smartphone,
-  Star,
-  TrendingUp,
-  Network,
+  LayoutDashboard, Users, GraduationCap, BookOpen, Calendar,
+  ClipboardList, MessageSquare, FileText, AlertTriangle, Menu, X,
+  School, UserCog, Clock, Bell, ChevronDown, LogOut, RefreshCw, UserCircle,
+  DollarSign, ShieldCheck, BarChart2, CalendarDays, Smartphone,
+  Star, TrendingUp, Network, DoorOpen, Video, Upload, GitBranch, Ticket,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { base44 } from "@/api/base44Client";
-import { ROLES } from "@/components/roles/roles";
+import { ROLES, PAGE_LABELS } from "@/components/roles/roles";
 import { getSession, clearSession } from "@/components/auth/appAuth";
 import AIChatbot from "@/components/chatbot/AIChatbot";
 import MobileBottomNav from "@/components/layout/MobileBottomNav";
 import WelcomeBanner from "@/components/layout/WelcomeBanner";
+import { useTheme } from "@/lib/ThemeContext";
 
 const ALL_NAVIGATION = [
-  { name: "Tableau de bord", href: "Dashboard", icon: LayoutDashboard },
-  { name: "Élèves", href: "Students", icon: Users },
-  { name: "Enseignants", href: "Teachers", icon: GraduationCap },
-  { name: "Classes", href: "Classes", icon: School },
-  { name: "Matières", href: "Subjects", icon: BookOpen },
-  { name: "Personnel", href: "Staff", icon: UserCog },
-  { name: "Emploi du temps", href: "Schedule", icon: Clock },
-  { name: "Examens & Notes", href: "Exams", icon: ClipboardList },
-  { name: "Devoirs", href: "Homework", icon: FileText },
-  { name: "Ressources", href: "Resources", icon: BookOpen },
-  { name: "Présences", href: "Attendance", icon: Calendar },
-  { name: "Sanctions", href: "Sanctions", icon: AlertTriangle },
-  { name: "Messages", href: "Messages", icon: MessageSquare },
-  { name: "Événements", href: "Events", icon: Calendar },
-  { name: "Finance & Contentieux", href: "Finance", icon: DollarSign },
-  { name: "Bulletins Scolaires", href: "Bulletins", icon: FileText },
-  { name: "Années Scolaires", href: "SchoolYearManager", icon: CalendarDays },
-  { name: "Saisie Rapide Mobile", href: "MobileSaisie", icon: Smartphone },
-  { name: "Espace Parents Premium", href: "EspaceParent", icon: Star },
-  { name: "Pilotage & Performance", href: "Pilotage", icon: TrendingUp },
-  { name: "Projets Agile / Scrum", href: "ProjectsScrum", icon: BarChart2 },
-  { name: "Réseau Social Éducatif", href: "SocialNetwork", icon: Network },
-  { name: "Affectation Intelligente", href: "Affectation", icon: Users },
-  { name: "Affectation Élèves", href: "AffectationEleves", icon: GraduationCap },
-  { name: "Mon Espace Élève", href: "StudentDashboard", icon: GraduationCap },
+  { name: "Tableau de bord",        href: "Dashboard",        icon: LayoutDashboard },
+  { name: "Élèves",                 href: "Students",         icon: Users },
+  { name: "Enseignants",            href: "Teachers",         icon: GraduationCap },
+  { name: "Classes",                href: "Classes",          icon: School },
+  { name: "Matières",               href: "Subjects",         icon: BookOpen },
+  { name: "Personnel",              href: "Staff",            icon: UserCog },
+  { name: "Emploi du temps",        href: "Schedule",         icon: Clock },
+  { name: "Salles & Infrastructures", href: "Rooms",           icon: DoorOpen },
+  { name: "Examens & Notes",        href: "Exams",            icon: ClipboardList },
+  { name: "Calculs & Moyennes",     href: "Moyennes",         icon: BarChart2 },
+  { name: "Devoirs",                href: "Homework",         icon: FileText },
+  { name: "Ressources",             href: "Resources",        icon: BookOpen },
+  { name: "Présences",              href: "Attendance",       icon: Calendar },
+  { name: "Sanctions",              href: "Sanctions",        icon: AlertTriangle },
+  { name: "Messages",               href: "Messages",         icon: MessageSquare },
+  { name: "Événements",             href: "Events",           icon: Calendar },
+  { name: "Visioconférence",        href: "Visio",            icon: Video },
+  { name: "Finance & Contentieux",  href: "Finance",          icon: DollarSign },
+  { name: "Bulletins Scolaires",    href: "Bulletins",        icon: FileText },
+  { name: "Années Scolaires",       href: "SchoolYearManager",icon: CalendarDays },
+  { name: "Passage de Classe",      href: "PassageDeClasse",  icon: GraduationCap },
+  { name: "Saisie Rapide Mobile",   href: "MobileSaisie",     icon: Smartphone },
+  { name: "Espace Parents Premium", href: "EspaceParent",     icon: Star },
+  { name: "Pilotage & Performance", href: "Pilotage",         icon: TrendingUp },
+  { name: "Projets Agile / Scrum",  href: "ProjectsScrum",    icon: BarChart2 },
+  { name: "Réseau Social Éducatif", href: "SocialNetwork",    icon: Network },
+  { name: "Affectation Intelligente",href: "Affectation",     icon: Users },
+  { name: "Affectation Élèves",     href: "AffectationEleves",icon: GraduationCap },
+  { name: "Mon Espace Élève",       href: "StudentDashboard", icon: GraduationCap },
+  { name: "Import de données",      href: "Import",           icon: Upload },
+  { name: "Organigramme",           href: "OrgChart",         icon: GitBranch },
+  { name: "Demandes Internes",      href: "Tickets",          icon: Ticket },
 ];
 
 const ADMIN_NAV = [
@@ -80,61 +64,67 @@ const ADMIN_NAV = [
 export default function Layout({ children, currentPageName }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentRole, setCurrentRole] = useState(null);
-  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+  const [profilePhoto, setProfilePhoto] = useState(null);
   const location = useLocation();
   const currentPath = location.pathname.split('/').pop() || 'Dashboard';
+  const { theme, setTheme, themes } = useTheme();
 
   useEffect(() => {
     const session = getSession();
     const role = session?.role || localStorage.getItem("edugest_role");
     setCurrentRole(role);
+    // Charger la photo de profil
+    if (session?.id) {
+      fetch('/api/functions/appGetProfile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: session.id }),
+      })
+        .then(r => r.json())
+        .then(data => { if (data?.photo) setProfilePhoto(data.photo); else setProfilePhoto(null); })
+        .catch(() => {});
+    }
   }, [currentPageName]);
 
-  // If no session/role and not on AppLogin or RoleSelect, redirect to AppLogin
   useEffect(() => {
     const session = getSession();
     const role = session?.role || localStorage.getItem("edugest_role");
     const exemptPages = ["AppLogin", "RoleSelect", "applogin", "roleselect"];
     if (!role && !exemptPages.includes(currentPageName)) {
       const url = createPageUrl("AppLogin");
-      if (window.location.href !== url) {
-        window.location.replace(url);
-      }
+      if (window.location.href !== url) window.location.replace(url);
     }
   }, [currentPageName]);
 
   const roleConfig = currentRole ? ROLES[currentRole] : null;
 
-  // Load custom permissions (set by RolePermissionsManager) or fall back to role defaults
   const getEffectivePages = (role) => {
+    const defaultPages = ROLES[role]?.pages || [];
     try {
       const saved = localStorage.getItem("edugest_role_permissions");
       if (saved) {
         const custom = JSON.parse(saved);
-        if (custom[role]) return custom[role];
+        if (custom[role]) {
+          // Merge: custom permissions + any new default pages not yet in custom
+          const merged = [...new Set([...custom[role], ...defaultPages])];
+          return merged;
+        }
       }
     } catch {}
-    return ROLES[role]?.pages || [];
+    return defaultPages;
   };
 
   const effectivePages = currentRole ? getEffectivePages(currentRole) : [];
-
-  // Filter navigation based on effective pages
   const navigation = currentRole && roleConfig
     ? ALL_NAVIGATION.filter(item => effectivePages.includes(item.href))
     : ALL_NAVIGATION;
-
-  // Only admin_systeme sees the Administration page
   const isAdmin = currentRole === "admin_systeme";
 
-  // Block access to unauthorized pages
   useEffect(() => {
-    const exemptPages = ["RoleSelect", "AppLogin", "Grades", "StudentDetail"];
+    const exemptPages = ["RoleSelect", "AppLogin", "Grades", "StudentDetail", "MonProfil"];
     if (currentRole && roleConfig && currentPageName && !exemptPages.includes(currentPageName)) {
       const allowed = [...getEffectivePages(currentRole), "Grades", "StudentDetail"];
-      if (!allowed.includes(currentPageName)) {
-        window.location.href = createPageUrl("Dashboard");
-      }
+      if (!allowed.includes(currentPageName)) window.location.href = createPageUrl("Dashboard");
     }
   }, [currentPageName, currentRole]);
 
@@ -148,51 +138,36 @@ export default function Layout({ children, currentPageName }) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <style>{`
-        .sidebar-item { transition: all 0.2s ease; }
-        .sidebar-item:hover { transform: translateX(4px); }
-        .sidebar-item.active {
-          background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%);
-          color: white;
-          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
-        }
-        .glass-effect {
-          backdrop-filter: blur(12px);
-          background: rgba(255, 255, 255, 0.9);
-        }
-      `}</style>
+    <div className="min-h-screen layout-root">
 
       {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
+        <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      {/* Sidebar */}
+      {/* ── Sidebar ── */}
       <aside className={cn(
-        "fixed top-0 left-0 z-50 h-full w-72 bg-white border-r border-slate-200 transform transition-transform duration-300 ease-out lg:translate-x-0",
+        "fixed top-0 left-0 z-50 h-full w-72 layout-sidebar border-r transform transition-transform duration-300 ease-out lg:translate-x-0",
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="flex flex-col h-full">
+
           {/* Logo */}
-          <div className="flex items-center justify-between h-16 px-6 border-b border-slate-100">
+          <div className="flex items-center justify-between h-16 px-6 border-b layout-border-light">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
+              <div className="w-10 h-10 rounded-xl layout-logo-accent flex items-center justify-center">
                 <School className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="font-bold text-slate-900 text-lg">EduGest</h1>
-                <p className="text-xs text-slate-500">Gestion Scolaire</p>
+                <h1 className="font-bold sidebar-text-hi text-lg">EduGest</h1>
+                <p className="text-xs sidebar-text-lo">Gestion Scolaire</p>
               </div>
             </div>
             <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setSidebarOpen(false)}>
-              <X className="w-5 h-5" />
+              <X className="w-5 h-5 sidebar-text-muted" />
             </Button>
           </div>
 
-          {/* Role badge */}
+          {/* Badge rôle */}
           {roleConfig && (
             <div className={`mx-4 mt-4 px-3 py-2 rounded-xl bg-gradient-to-r ${roleConfig.color}`}>
               <div className="flex items-center gap-2">
@@ -216,8 +191,8 @@ export default function Layout({ children, currentPageName }) {
                     to={createPageUrl(item.href)}
                     onClick={() => setSidebarOpen(false)}
                     className={cn(
-                      "sidebar-item flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium",
-                      isActive ? "active" : "text-slate-600 hover:bg-slate-100"
+                      "sidebar-item layout-nav-item flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium",
+                      isActive ? "active" : ""
                     )}
                   >
                     <item.icon className="w-5 h-5" />
@@ -226,11 +201,10 @@ export default function Layout({ children, currentPageName }) {
                 );
               })}
 
-              {/* Admin section */}
               {isAdmin && (
                 <>
                   <div className="pt-3 pb-1">
-                    <p className="text-xs text-slate-400 uppercase tracking-wider px-4">Administration</p>
+                    <p className="text-xs sidebar-text-muted uppercase tracking-wider px-4">Administration</p>
                   </div>
                   {ADMIN_NAV.map((item) => {
                     const isActive = currentPath === item.href;
@@ -240,8 +214,8 @@ export default function Layout({ children, currentPageName }) {
                         to={createPageUrl(item.href)}
                         onClick={() => setSidebarOpen(false)}
                         className={cn(
-                          "sidebar-item flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium",
-                          isActive ? "active" : "text-slate-600 hover:bg-slate-100"
+                          "sidebar-item layout-nav-item flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium",
+                          isActive ? "active" : ""
                         )}
                       >
                         <item.icon className="w-5 h-5" />
@@ -251,31 +225,37 @@ export default function Layout({ children, currentPageName }) {
                   })}
                 </>
               )}
-
             </nav>
           </ScrollArea>
 
-          {/* User section */}
-          <div className="p-4 border-t border-slate-100">
+          {/* Section utilisateur */}
+          <div className="p-4 border-t layout-border-light">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-3 w-full p-3 rounded-xl hover:bg-slate-100 transition-colors">
-                  <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${roleConfig?.color || "from-blue-400 to-blue-600"} flex items-center justify-center text-xl`}>
-                    {roleConfig?.icon || "👤"}
+                <button className="layout-user-btn flex items-center gap-3 w-full p-3 rounded-xl transition-colors">
+                  <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${roleConfig?.color || "from-blue-400 to-blue-600"} flex items-center justify-center text-xl flex-shrink-0 overflow-hidden`}>
+                    {profilePhoto
+                      ? <img src={profilePhoto} alt="avatar" className="w-full h-full object-cover" />
+                      : (roleConfig?.icon || "👤")
+                    }
                   </div>
                   <div className="flex-1 text-left min-w-0">
-                    <p className="text-sm font-medium text-slate-900 truncate">
+                    <p className="text-sm font-medium sidebar-text-hi truncate">
                       {getSession()?.full_name || roleConfig?.label || "Utilisateur"}
                     </p>
-                    <p className="text-xs text-slate-500">{roleConfig?.label || ""}</p>
+                    <p className="text-xs sidebar-text-lo">{roleConfig?.label || ""}</p>
                   </div>
-                  <ChevronDown className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                  <ChevronDown className="w-4 h-4 sidebar-text-muted flex-shrink-0" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem onClick={() => { window.location.href = createPageUrl("MonProfil"); }}>
+                  <UserCircle className="w-4 h-4 mr-2" />
+                  Mon profil
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleChangeRole}>
                   <RefreshCw className="w-4 h-4 mr-2" />
-                  Changer de profil
+                  Changer de compte
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => { clearSession(); window.location.href = createPageUrl("AppLogin"); }}>
                   <LogOut className="w-4 h-4 mr-2" />
@@ -287,21 +267,26 @@ export default function Layout({ children, currentPageName }) {
         </div>
       </aside>
 
-      {/* Main content */}
+      {/* ── Contenu principal ── */}
       <div className="lg:pl-72">
-        <header className="sticky top-0 z-30 glass-effect border-b border-slate-200">
+        <header className="sticky top-0 z-30 layout-header-glass border-b">
           <div className="flex items-center justify-between h-16 px-4 lg:px-8">
+
+            {/* Gauche : burger + titre */}
             <div className="flex items-center gap-4">
               <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setSidebarOpen(true)}>
                 <Menu className="w-5 h-5" />
               </Button>
               <div className="hidden md:block">
-                <h2 className="text-lg font-semibold text-slate-900">
-                  {[...ALL_NAVIGATION, ...ADMIN_NAV].find(n => n.href === currentPath)?.name || "Tableau de bord"}
+                <h2 className="text-lg font-semibold main-text-hi">
+                  {[...ALL_NAVIGATION, ...ADMIN_NAV].find(n => n.href === currentPath)?.name
+                    || PAGE_LABELS[currentPageName]
+                    || "Tableau de bord"}
                 </h2>
               </div>
             </div>
 
+            {/* Droite : badge rôle + cloche + sélecteur de thème */}
             <div className="flex items-center gap-3">
               {roleConfig && (
                 <div className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r ${roleConfig.color} text-white text-xs font-medium`}>
@@ -309,43 +294,58 @@ export default function Layout({ children, currentPageName }) {
                   <span>{roleConfig.label}</span>
                 </div>
               )}
+
               <Button variant="ghost" size="icon" className="relative">
                 <Bell className="w-5 h-5" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleChangeRole}
-                className="hidden md:flex items-center gap-2 text-xs"
+
+              {/* ── Sélecteur de thème ── */}
+              <div
+                className="flex items-center rounded-lg border overflow-hidden shadow-sm"
+                style={{ borderColor: 'var(--theme-header-border, #e2e8f0)' }}
               >
-                <RefreshCw className="w-3 h-3" />
-                Changer
-              </Button>
+                {themes.map((t, idx) => (
+                  <button
+                    key={t.id}
+                    onClick={() => setTheme(t.id)}
+                    title={t.description}
+                    aria-label={`Thème ${t.label}`}
+                    aria-pressed={theme === t.id}
+                    className={cn(
+                      "w-9 h-9 flex items-center justify-center text-base transition-all duration-200",
+                      idx < themes.length - 1 && "border-r",
+                      theme !== t.id && "hover:opacity-80"
+                    )}
+                    style={{
+                      background: theme === t.id
+                        ? `var(--theme-accent-from, #3b82f6)`
+                        : `var(--theme-header-glass, rgba(255,255,255,0.9))`,
+                      color: theme === t.id ? '#ffffff' : 'var(--theme-main-text-lo, #64748b)',
+                      borderColor: 'var(--theme-header-border, #e2e8f0)',
+                    }}
+                  >
+                    {t.icon}
+                  </button>
+                ))}
+              </div>
             </div>
+
           </div>
         </header>
 
         <main className="p-4 lg:p-8 pb-24 lg:pb-8">
           {currentRole && currentPageName !== "RoleSelect" && (
-            <WelcomeBanner currentRole={currentRole} />
+            <WelcomeBanner currentRole={currentRole} profilePhoto={profilePhoto} />
           )}
           {children}
         </main>
       </div>
 
-      {/* Mobile Bottom Navigation */}
       {currentRole && (
-        <>
-          <MobileBottomNav
-            currentRole={currentRole}
-            onMoreClick={() => setSidebarOpen(true)}
-          />
-          {/* Full menu overlay triggered by "Plus" */}
-        </>
+        <MobileBottomNav currentRole={currentRole} onMoreClick={() => setSidebarOpen(true)} />
       )}
 
-      {/* AI Chatbot - visible for all logged-in roles */}
       {currentRole && <AIChatbot />}
     </div>
   );

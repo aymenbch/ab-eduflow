@@ -130,7 +130,7 @@ export default function EarlyWarningSystem() {
         }
       }
     });
-    setAiAnalysis(result);
+    setAiAnalysis(result?._localMode ? { _localMode: true } : result);
     setLoadingAI(false);
   };
 
@@ -167,22 +167,28 @@ export default function EarlyWarningSystem() {
         <Card className="border-violet-200 bg-violet-50">
           <CardHeader><CardTitle className="text-base flex items-center gap-2"><Sparkles className="w-4 h-4 text-violet-600" />Analyse IA & Recommandations</CardTitle></CardHeader>
           <CardContent className="space-y-4">
-            <p className="text-sm text-slate-700 leading-relaxed">{aiAnalysis.synthese}</p>
-            {aiAnalysis.recommandations?.map((rec, i) => (
-              <div key={i} className="bg-white rounded-lg p-4 border border-violet-100">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="font-semibold text-sm">{rec.eleve}</span>
-                  <Badge className={rec.priorite === "urgente" ? "bg-red-100 text-red-700" : rec.priorite === "importante" ? "bg-yellow-100 text-yellow-700" : "bg-blue-100 text-blue-700"}>
-                    {rec.priorite}
-                  </Badge>
-                </div>
-                <ul className="space-y-1">
-                  {rec.actions?.map((action, j) => (
-                    <li key={j} className="text-sm text-slate-600 flex items-start gap-2"><span className="text-violet-500 mt-0.5">•</span>{action}</li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+            {aiAnalysis._localMode ? (
+              <p className="text-sm text-slate-500 italic">Fonctionnalité IA non disponible en mode local. Connectez un service LLM pour activer les recommandations automatiques.</p>
+            ) : (
+              <>
+                <p className="text-sm text-slate-700 leading-relaxed">{aiAnalysis.synthese}</p>
+                {aiAnalysis.recommandations?.map((rec, i) => (
+                  <div key={i} className="bg-white rounded-lg p-4 border border-violet-100">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="font-semibold text-sm">{rec.eleve}</span>
+                      <Badge className={rec.priorite === "urgente" ? "bg-red-100 text-red-700" : rec.priorite === "importante" ? "bg-yellow-100 text-yellow-700" : "bg-blue-100 text-blue-700"}>
+                        {rec.priorite}
+                      </Badge>
+                    </div>
+                    <ul className="space-y-1">
+                      {rec.actions?.map((action, j) => (
+                        <li key={j} className="text-sm text-slate-600 flex items-start gap-2"><span className="text-violet-500 mt-0.5">•</span>{action}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </>
+            )}
           </CardContent>
         </Card>
       )}

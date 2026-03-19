@@ -1,93 +1,79 @@
 import React, { useMemo, useState } from "react";
 import SignaturePad from "./SignaturePad";
+import { simpleAvg, weightedAvgFromRows, subjectClassAvg, getMention } from "@/utils/gradeUtils";
 
 export default function BulletinPreview({
-  student, trimester, cls, teachers, grades, exams, subjects, attendance, allClassStudents, allGrades
+  student, period, cls, teachers, grades, exams, subjects, attendance, allClassStudents, allGrades
 }) {
   const [signatures, setSignatures] = useState({ directeur: null, profPrincipal: null, parent: null });
   const mainTeacher = teachers.find(t => t.id === cls?.main_teacher_id);
 
-  const data = useMemo(() => {
-    // Exams for this class & trimester
-    const trimExams = exams.filter(e => e.class_id === cls?.id && e.trimester === trimester);
+  // period can be a real Period object (with .id) or a legacy object {id:"T1", name:"Trimestre 1"}
+  const isLegacyPeriod = period && !period.school_year_id;
 
-    // Build subject rows
+  const data = useMemo(() => {
+    // ── Filtrer les examens selon la période ─────────────────────────────────
+    const trimExams = exams.filter(e => {
+      if (e.class_id !== cls?.id) return false;
+      if (!period) return true;
+      return isLegacyPeriod ? e.trimester === period.id : e.period_id === period.id;
+    });
+
+    // ── Lignes par matière ───────────────────────────────────────────────────
     const subjectRows = subjects.map(sub => {
       const subExams = trimExams.filter(e => e.subject_id === sub.id);
       if (!subExams.length) return null;
 
-      const studentGrades = subExams.map(exam => {
-        const g = grades.find(g => g.exam_id === exam.id && g.student_id === student.id);
-        return { exam, grade: g };
-      });
+      const studentGrades = subExams.map(exam => ({
+        exam,
+        grade: grades.find(g => g.exam_id === exam.id && g.student_id === student.id),
+      }));
 
-      const scores = studentGrades.filter(sg => sg.grade && !sg.grade.absent && sg.grade.score != null).map(sg => sg.grade.score);
-      const avg = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : null;
+      const scores = studentGrades
+        .filter(sg => sg.grade && !sg.grade.absent && sg.grade.score != null)
+        .map(sg => sg.grade.score);
 
-      // Class average for this subject
-      const classScores = subExams.flatMap(exam => {
-        return allClassStudents.map(s => {
-          const g = allGrades.find(g => g.exam_id === exam.id && g.student_id === s.id);
-          return g && !g.absent && g.score != null ? g.score : null;
-        }).filter(s => s !== null);
-      });
-      const classAvg = classScores.length ? classScores.reduce((a, b) => a + b, 0) / classScores.length : null;
+      const avg      = simpleAvg(scores);
+      const classAvg = subjectClassAvg(sub.id, allClassStudents, trimExams, allGrades);
+      const comments = studentGrades
+        .filter(sg => sg.grade?.comment)
+        .map(sg => sg.grade.comment)
+        .join(", ");
 
-      // Comments
-      const comments = studentGrades.filter(sg => sg.grade?.comment).map(sg => sg.grade.comment).join(", ");
-
-      return {
-        subject: sub,
-        avg,
-        classAvg,
-        comments,
-        coef: sub.coefficient || 1,
-        subExams: subExams.length
-      };
+      return { subject: sub, avg, classAvg, comments, coef: sub.coefficient || 1, subExams: subExams.length };
     }).filter(Boolean);
 
-    // Overall average (weighted)
-    const totalWeighted = subjectRows.filter(r => r.avg !== null).reduce((sum, r) => sum + r.avg * r.coef, 0);
-    const totalCoef = subjectRows.filter(r => r.avg !== null).reduce((sum, r) => sum + r.coef, 0);
-    const overall = totalCoef > 0 ? totalWeighted / totalCoef : null;
+    // ── Moyenne générale pondérée ────────────────────────────────────────────
+    const overall = weightedAvgFromRows(subjectRows);
 
-    // Class ranking
+    // ── Classement dans la classe ────────────────────────────────────────────
     const classAverages = allClassStudents.map(s => {
       const sRows = subjectRows.map(r => {
-        const subExams = trimExams.filter(e => e.subject_id === r.subject.id);
-        const sScores = subExams.map(exam => {
-          const g = allGrades.find(g => g.exam_id === exam.id && g.student_id === s.id);
-          return g && !g.absent && g.score != null ? g.score : null;
-        }).filter(s => s !== null);
-        const sAvg = sScores.length ? sScores.reduce((a, b) => a + b, 0) / sScores.length : null;
-        return { avg: sAvg, coef: r.coef };
+        const sScores = trimExams
+          .filter(e => e.subject_id === r.subject.id)
+          .map(exam => {
+            const g = allGrades.find(g => g.exam_id === exam.id && g.student_id === s.id);
+            return g && !g.absent && g.score != null ? g.score : null;
+          })
+          .filter(v => v !== null);
+        return { avg: simpleAvg(sScores), coef: r.coef };
       });
-      const tw = sRows.filter(r => r.avg !== null).reduce((sum, r) => sum + r.avg * r.coef, 0);
-      const tc = sRows.filter(r => r.avg !== null).reduce((sum, r) => sum + r.coef, 0);
-      return { id: s.id, avg: tc > 0 ? tw / tc : 0 };
+      return { id: s.id, avg: weightedAvgFromRows(sRows) ?? 0 };
     }).sort((a, b) => b.avg - a.avg);
 
-    const rank = classAverages.findIndex(c => c.id === student.id) + 1;
-    const classOverallAvg = classAverages.length ? classAverages.reduce((s, c) => s + c.avg, 0) / classAverages.length : null;
+    const rank           = classAverages.findIndex(c => c.id === student.id) + 1;
+    const classOverallAvg = simpleAvg(classAverages.map(c => c.avg));
 
-    // Attendance
+    // ── Assiduité ────────────────────────────────────────────────────────────
     const studentAtt = attendance.filter(a => a.student_id === student.id);
-    const absences = studentAtt.filter(a => a.status === "absent").length;
-    const lates = studentAtt.filter(a => a.status === "late").length;
+    const absences   = studentAtt.filter(a => a.status === "absent").length;
+    const lates      = studentAtt.filter(a => a.status === "late").length;
 
     return { subjectRows, overall, rank, classSize: allClassStudents.length, classOverallAvg, absences, lates };
-  }, [student, trimester, cls, grades, exams, subjects, attendance, allClassStudents, allGrades]);
+  }, [student, period, cls, grades, exams, subjects, attendance, allClassStudents, allGrades]);
 
-  const mention = (avg) => {
-    if (avg === null) return { label: "—", color: "#6b7280" };
-    if (avg >= 16) return { label: "Très Bien", color: "#16a34a" };
-    if (avg >= 14) return { label: "Bien", color: "#2563eb" };
-    if (avg >= 12) return { label: "Assez Bien", color: "#7c3aed" };
-    if (avg >= 10) return { label: "Passable", color: "#d97706" };
-    return { label: "Insuffisant", color: "#dc2626" };
-  };
-
-  const { label: mentionLabel, color: mentionColor } = mention(data.overall);
+  // Utilise getMention() importée de gradeUtils
+  const { label: mentionLabel, color: mentionColor } = getMention(data.overall);
   const schoolYear = cls?.school_year || new Date().getFullYear() + "-" + (new Date().getFullYear() + 1);
 
   return (
@@ -104,7 +90,7 @@ export default function BulletinPreview({
           <div className="text-lg font-bold text-slate-900 border-2 border-blue-700 rounded-lg px-6 py-2">
             BULLETIN SCOLAIRE
           </div>
-          <div className="text-sm font-medium text-blue-700 mt-1">{trimester === "T1" ? "1er Trimestre" : trimester === "T2" ? "2ème Trimestre" : "3ème Trimestre"}</div>
+          <div className="text-sm font-medium text-blue-700 mt-1">{period?.name || "—"}</div>
         </div>
         <div className="text-right text-sm text-slate-600">
           <div className="font-semibold">{cls?.name}</div>
@@ -143,7 +129,7 @@ export default function BulletinPreview({
         </thead>
         <tbody>
           {data.subjectRows.map((row, i) => {
-            const { label: appLabel, color: appColor } = mention(row.avg);
+            const { label: appLabel, color: appColor } = getMention(row.avg);
             return (
               <tr key={row.subject.id} className={i % 2 === 0 ? "bg-white" : "bg-slate-50"}>
                 <td className="px-3 py-2 font-medium border-b border-slate-100">

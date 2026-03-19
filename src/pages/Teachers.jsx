@@ -4,6 +4,7 @@ import { base44 } from "@/api/base44Client";
 import PageHeader from "@/components/ui/PageHeader";
 import DataTable from "@/components/ui/DataTable";
 import TeacherForm from "@/components/forms/TeacherForm";
+import CredentialsModal from "@/components/shared/CredentialsModal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +32,7 @@ export default function Teachers() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [teacherToDelete, setTeacherToDelete] = useState(null);
   const [search, setSearch] = useState("");
+  const [accountModal, setAccountModal] = useState(null);
 
   const queryClient = useQueryClient();
 
@@ -219,7 +221,25 @@ export default function Teachers() {
         open={formOpen}
         onClose={() => setFormOpen(false)}
         teacher={selectedTeacher}
-        onSave={() => queryClient.invalidateQueries({ queryKey: ["teachers"] })}
+        onSave={(result) => {
+          queryClient.invalidateQueries({ queryKey: ["teachers"] });
+          if (result?._account) {
+            setAccountModal({
+              title: "Compte enseignant créé",
+              login: result._account.login,
+              provisional_password: result._account.provisional_password,
+              full_name: `${result.first_name} ${result.last_name}`,
+              typeLabel: "Enseignant",
+              notify_email: result._account.notify_email,
+            });
+          }
+        }}
+      />
+
+      <CredentialsModal
+        open={!!accountModal}
+        onClose={() => setAccountModal(null)}
+        credentials={accountModal}
       />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

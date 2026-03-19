@@ -20,7 +20,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { TrendingUp, TrendingDown, AlertCircle, CheckCircle, Clock, DollarSign, FileWarning, Plus, Loader2 } from "lucide-react";
+import { TrendingUp, TrendingDown, AlertCircle, CheckCircle, Clock, DollarSign, FileWarning, Plus, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -69,6 +69,10 @@ export default function Finance() {
     status: "ouvert", opened_date: new Date().toISOString().split("T")[0], notes: "",
   });
 
+  const [payPage, setPayPage] = useState(1);
+  const [litigPage, setLitigPage] = useState(1);
+  const FIN_PAGE_SIZE = 20;
+
   const queryClient = useQueryClient();
 
   const { data: payments = [], isLoading: loadingPayments } = useQuery({
@@ -85,6 +89,12 @@ export default function Finance() {
   });
 
   const studentMap = Object.fromEntries(students.map(s => [s.id, s]));
+
+  // Pagination slices
+  const payTotalPages = Math.ceil(payments.length / FIN_PAGE_SIZE);
+  const pagePayments = payments.slice((payPage - 1) * FIN_PAGE_SIZE, payPage * FIN_PAGE_SIZE);
+  const litigTotalPages = Math.ceil(litigations.length / FIN_PAGE_SIZE);
+  const pageLitigations = litigations.slice((litigPage - 1) * FIN_PAGE_SIZE, litigPage * FIN_PAGE_SIZE);
 
   // Financial KPIs
   const totalDue = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
@@ -236,7 +246,7 @@ export default function Finance() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {payments.map(p => {
+                    {pagePayments.map(p => {
                       const student = studentMap[p.student_id];
                       const remaining = (p.amount || 0) - (p.amount_paid || 0);
                       return (
@@ -272,6 +282,38 @@ export default function Finance() {
                   <p className="text-center text-slate-500 py-8">Aucun paiement enregistré</p>
                 )}
               </div>
+              {payTotalPages > 1 && (
+                <div className="flex items-center justify-between px-4 py-3 border-t">
+                  <p className="text-sm text-slate-500">
+                    {(payPage - 1) * FIN_PAGE_SIZE + 1}–{Math.min(payPage * FIN_PAGE_SIZE, payments.length)} sur {payments.length}
+                  </p>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setPayPage(p => Math.max(1, p - 1))}
+                      disabled={payPage === 1}
+                      className="p-1.5 rounded hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    {Array.from({ length: payTotalPages }, (_, i) => i + 1).map(pg => (
+                      <button
+                        key={pg}
+                        onClick={() => setPayPage(pg)}
+                        className={`min-w-[32px] h-8 px-2 rounded text-sm font-medium ${pg === payPage ? "bg-blue-600 text-white" : "hover:bg-slate-100 text-slate-700"}`}
+                      >
+                        {pg}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => setPayPage(p => Math.min(payTotalPages, p + 1))}
+                      disabled={payPage === payTotalPages}
+                      className="p-1.5 rounded hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -293,7 +335,7 @@ export default function Finance() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {litigations.map(l => {
+                    {pageLitigations.map(l => {
                       const student = studentMap[l.student_id];
                       return (
                         <TableRow key={l.id}>
@@ -338,6 +380,38 @@ export default function Finance() {
                   <p className="text-center text-slate-500 py-8">Aucun contentieux enregistré</p>
                 )}
               </div>
+              {litigTotalPages > 1 && (
+                <div className="flex items-center justify-between px-4 py-3 border-t">
+                  <p className="text-sm text-slate-500">
+                    {(litigPage - 1) * FIN_PAGE_SIZE + 1}–{Math.min(litigPage * FIN_PAGE_SIZE, litigations.length)} sur {litigations.length}
+                  </p>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setLitigPage(p => Math.max(1, p - 1))}
+                      disabled={litigPage === 1}
+                      className="p-1.5 rounded hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    {Array.from({ length: litigTotalPages }, (_, i) => i + 1).map(pg => (
+                      <button
+                        key={pg}
+                        onClick={() => setLitigPage(pg)}
+                        className={`min-w-[32px] h-8 px-2 rounded text-sm font-medium ${pg === litigPage ? "bg-blue-600 text-white" : "hover:bg-slate-100 text-slate-700"}`}
+                      >
+                        {pg}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => setLitigPage(p => Math.min(litigTotalPages, p + 1))}
+                      disabled={litigPage === litigTotalPages}
+                      className="p-1.5 rounded hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

@@ -79,6 +79,15 @@ import StudentDetail from './pages/StudentDetail';
 import Students from './pages/Students';
 import Subjects from './pages/Subjects';
 import Teachers from './pages/Teachers';
+import MonProfil from './pages/MonProfil';
+import PassageDeClasse from './pages/PassageDeClasse';
+import Rooms from './pages/Rooms';
+import Visio from './pages/Visio';
+import Moyennes from './pages/Moyennes';
+import Import from './pages/Import';
+import OrgChart from './pages/OrgChart';
+import AICenter from './pages/AICenter';
+import Tickets from './pages/Tickets';
 import __Layout from './Layout.jsx';
 
 
@@ -115,6 +124,15 @@ export const PAGES = {
     "Students": Students,
     "Subjects": Subjects,
     "Teachers": Teachers,
+    "MonProfil": MonProfil,
+    "PassageDeClasse": PassageDeClasse,
+    "Rooms": Rooms,
+    "Visio": Visio,
+    "Moyennes": Moyennes,
+    "Import": Import,
+    "OrgChart": OrgChart,
+    "AICenter": AICenter,
+    "Tickets": Tickets,
 }
 
 export const pagesConfig = {

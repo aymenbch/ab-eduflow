@@ -8,9 +8,15 @@ import { Badge } from "@/components/ui/badge";
 import { Printer, FileText, Users } from "lucide-react";
 import BulletinPreview from "@/components/bulletins/BulletinPreview.jsx";
 
+const LEGACY_PERIODS = [
+  { id: "T1", name: "Trimestre 1", type: "trimestre" },
+  { id: "T2", name: "Trimestre 2", type: "trimestre" },
+  { id: "T3", name: "Trimestre 3", type: "trimestre" },
+];
+
 export default function Bulletins() {
   const [selectedClassId, setSelectedClassId] = useState("");
-  const [selectedTrimester, setSelectedTrimester] = useState("T1");
+  const [selectedPeriodId, setSelectedPeriodId] = useState("");
   const [selectedStudentId, setSelectedStudentId] = useState("");
 
   const { data: classes = [] } = useQuery({ queryKey: ["classes"], queryFn: () => base44.entities.Class.list() });
@@ -20,6 +26,27 @@ export default function Bulletins() {
   const { data: exams = [] } = useQuery({ queryKey: ["exams"], queryFn: () => base44.entities.Exam.list() });
   const { data: subjects = [] } = useQuery({ queryKey: ["subjects"], queryFn: () => base44.entities.Subject.list() });
   const { data: attendance = [] } = useQuery({ queryKey: ["attendance"], queryFn: () => base44.entities.Attendance.list() });
+
+  // Année scolaire active + ses périodes
+  const { data: schoolYears = [] } = useQuery({ queryKey: ["schoolYears"], queryFn: () => base44.entities.SchoolYear.list() });
+  const activeYear = schoolYears.find(y => y.status === "active");
+  const { data: periodsRaw = [] } = useQuery({
+    queryKey: ["periods", activeYear?.id],
+    queryFn: () => base44.entities.Period.filter({ school_year_id: activeYear.id }),
+    enabled: !!activeYear?.id,
+  });
+  const periods = periodsRaw.length > 0
+    ? [...periodsRaw].sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+    : LEGACY_PERIODS;
+
+  // Sélectionner automatiquement la première période au chargement
+  React.useEffect(() => {
+    if (periods.length > 0 && !selectedPeriodId) {
+      setSelectedPeriodId(periods[0].id);
+    }
+  }, [periods]);
+
+  const selectedPeriod = periods.find(p => p.id === selectedPeriodId) || null;
 
   const classStudents = useMemo(() =>
     students.filter(s => s.class_id === selectedClassId && s.status === "active"),
@@ -61,16 +88,19 @@ export default function Bulletins() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="w-40">
-              <label className="text-sm font-medium text-slate-700 mb-2 block">Trimestre</label>
-              <Select value={selectedTrimester} onValueChange={setSelectedTrimester}>
+            <div className="w-48">
+              <label className="text-sm font-medium text-slate-700 mb-2 block">Période</label>
+              <Select value={selectedPeriodId} onValueChange={setSelectedPeriodId}>
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Sélectionner..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="T1">Trimestre 1</SelectItem>
-                  <SelectItem value="T2">Trimestre 2</SelectItem>
-                  <SelectItem value="T3">Trimestre 3</SelectItem>
+                  {periods.map(p => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name}
+                      {p.status === "closed" && " ✓"}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -101,7 +131,7 @@ export default function Bulletins() {
       {!selectedClassId && (
         <div className="flex flex-col items-center justify-center py-16 text-slate-400 bg-slate-50 rounded-xl">
           <FileText className="w-12 h-12 mb-3 text-slate-300" />
-          <p className="text-lg font-medium">Sélectionnez une classe et un trimestre</p>
+          <p className="text-lg font-medium">Sélectionnez une classe et une période</p>
           <p className="text-sm">pour générer les bulletins scolaires</p>
         </div>
       )}
@@ -115,7 +145,7 @@ export default function Bulletins() {
                 ? "1 bulletin"
                 : `${classStudents.length} bulletins — ${selectedClass?.name}`}
             </span>
-            <Badge variant="outline">{selectedTrimester}</Badge>
+            {selectedPeriod && <Badge variant="outline" className="border-indigo-300 text-indigo-600">{selectedPeriod.name}</Badge>}
           </div>
 
           {(selectedStudentId && selectedStudentId !== "all"
@@ -125,7 +155,7 @@ export default function Bulletins() {
             <BulletinPreview
               key={student.id}
               student={student}
-              trimester={selectedTrimester}
+              period={selectedPeriod}
               cls={selectedClass}
               teachers={teachers}
               grades={grades}

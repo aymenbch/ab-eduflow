@@ -13,6 +13,7 @@ import {
   ChevronRight, Sparkles, Shield, Award, Loader2, CalendarCheck, ChevronDown
 } from "lucide-react";
 import { useCurrentMember } from "@/components/hooks/useCurrentMember";
+import { subjectAveragesForStudent, studentWeightedAvg, avgColorClass } from "@/utils/gradeUtils";
 
 const TABS = [
   { id: "notes", label: "📊 Notes", icon: TrendingUp },
@@ -22,77 +23,108 @@ const TABS = [
   { id: "rdv", label: "📅 Rendez-vous", icon: Calendar },
 ];
 
+// ─── Couleurs par index d'enfant ─────────────────────────────
+const CHILD_COLORS = [
+  { bg: "from-amber-500 to-orange-500",   avatar: "bg-amber-500",   ring: "ring-amber-400",  text: "text-amber-600",  light: "bg-amber-50 border-amber-300"  },
+  { bg: "from-blue-500 to-indigo-500",    avatar: "bg-blue-500",    ring: "ring-blue-400",   text: "text-blue-600",   light: "bg-blue-50 border-blue-300"    },
+  { bg: "from-emerald-500 to-green-500",  avatar: "bg-emerald-500", ring: "ring-emerald-400",text: "text-emerald-600",light: "bg-emerald-50 border-emerald-300"},
+  { bg: "from-purple-500 to-violet-500",  avatar: "bg-purple-500",  ring: "ring-purple-400", text: "text-purple-600", light: "bg-purple-50 border-purple-300" },
+  { bg: "from-rose-500 to-pink-500",      avatar: "bg-rose-500",    ring: "ring-rose-400",   text: "text-rose-600",   light: "bg-rose-50 border-rose-300"    },
+];
+
 export default function EspaceParent() {
   const [activeTab, setActiveTab] = useState("notes");
   const [selectedChildId, setSelectedChildId] = useState(null);
 
   const { myChildren, isParent, userEmail } = useCurrentMember();
 
-  const { data: allStudents = [] } = useQuery({ queryKey: ["students"], queryFn: () => base44.entities.Student.list() });
-  const { data: grades = [] } = useQuery({ queryKey: ["grades"], queryFn: () => base44.entities.Grade.list() });
-  const { data: exams = [] } = useQuery({ queryKey: ["exams"], queryFn: () => base44.entities.Exam.list() });
-  const { data: subjects = [] } = useQuery({ queryKey: ["subjects"], queryFn: () => base44.entities.Subject.list() });
+  const { data: allStudents = [] } = useQuery({ queryKey: ["students"],   queryFn: () => base44.entities.Student.list() });
+  const { data: grades     = [] } = useQuery({ queryKey: ["grades"],     queryFn: () => base44.entities.Grade.list() });
+  const { data: exams      = [] } = useQuery({ queryKey: ["exams"],      queryFn: () => base44.entities.Exam.list() });
+  const { data: subjects   = [] } = useQuery({ queryKey: ["subjects"],   queryFn: () => base44.entities.Subject.list() });
   const { data: attendance = [] } = useQuery({ queryKey: ["attendance"], queryFn: () => base44.entities.Attendance.list() });
-  const { data: sanctions = [] } = useQuery({ queryKey: ["sanctions"], queryFn: () => base44.entities.Sanction.list() });
-  const { data: teachers = [] } = useQuery({ queryKey: ["teachers"], queryFn: () => base44.entities.Teacher.list() });
-  const { data: messages = [] } = useQuery({ queryKey: ["messages"], queryFn: () => base44.entities.Message.list() });
+  const { data: sanctions  = [] } = useQuery({ queryKey: ["sanctions"],  queryFn: () => base44.entities.Sanction.list() });
+  const { data: teachers   = [] } = useQuery({ queryKey: ["teachers"],   queryFn: () => base44.entities.Teacher.list() });
+  const { data: messages   = [] } = useQuery({ queryKey: ["messages"],   queryFn: () => base44.entities.Message.list() });
+  const { data: classes    = [] } = useQuery({ queryKey: ["classes"],    queryFn: () => base44.entities.Class.list() });
 
-  // Determine which students to show: if connected as parent, filter to own children
-  const students = isParent && myChildren.length > 0 ? myChildren : allStudents;
+  // Enfants disponibles : propres enfants si parent connecté, sinon tous les élèves
+  const students = useMemo(
+    () => (isParent && myChildren.length > 0 ? myChildren : allStudents),
+    [isParent, myChildren, allStudents]
+  );
 
-  // Auto-select first child
+  // Auto-sélection du premier enfant
   React.useEffect(() => {
     if (students.length > 0 && !selectedChildId) {
       setSelectedChildId(students[0].id);
     }
-  }, [students]);
+  }, [students, selectedChildId]);
 
-  // The selected child
-  const child = students.find(s => s.id === selectedChildId) || students[0];
+  // Enfant actif
+  const child      = students.find(s => s.id === selectedChildId) || students[0];
+  const childIndex = students.findIndex(s => s.id === child?.id);
+  const childColor = CHILD_COLORS[Math.max(0, childIndex) % CHILD_COLORS.length];
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-amber-500 to-orange-500 rounded-2xl p-6 text-white">
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div className="flex items-center gap-4">
-            <div className="text-4xl">👨‍👩‍👧</div>
+    <div className="space-y-5 max-w-4xl mx-auto">
+
+      {/* ── Bandeau header ──────────────────────────────────────────────────── */}
+      <div className={`bg-gradient-to-r ${childColor.bg} rounded-2xl p-5 text-white`}>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            {/* Avatar de l'enfant sélectionné */}
+            <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-2xl font-bold flex-shrink-0 ring-2 ring-white/40">
+              {child ? child.first_name?.[0]?.toUpperCase() : "👨‍👩‍👧"}
+            </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-bold">Espace Parents</h1>
-                <Badge className="bg-white/20 text-white border-white/30 text-xs">✨ Premium</Badge>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-xl font-bold leading-tight">
+                  {child ? `${child.first_name} ${child.last_name}` : "Espace Parents"}
+                </h1>
+                {students.length > 1 && (
+                  <Badge className="bg-white/20 text-white border-white/30 text-[10px]">
+                    {childIndex + 1}/{students.length}
+                  </Badge>
+                )}
               </div>
-              <p className="text-white/80 text-sm mt-0.5">
-                Suivi complet de{" "}
-                <span className="font-semibold text-white">
-                  {child ? `${child.first_name} ${child.last_name}` : "votre enfant"}
-                </span>
-              </p>
+              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                {child?.class_id && classes.find(c => c.id === child.class_id) && (
+                  <span className="text-white/90 text-sm font-medium">
+                    {classes.find(c => c.id === child.class_id)?.name}
+                  </span>
+                )}
+                {child?.level && (
+                  <span className="text-white/70 text-xs">· {child.level}</span>
+                )}
+                {child?.student_code && (
+                  <span className="text-white/60 text-xs">· N° {child.student_code}</span>
+                )}
+              </div>
             </div>
           </div>
-          <div className="flex flex-col items-end gap-2">
-            {/* Child selector (for parents with multiple children) */}
-            {students.length > 1 && (
-              <Select value={selectedChildId || ""} onValueChange={setSelectedChildId}>
-                <SelectTrigger className="w-48 bg-white/20 border-white/30 text-white text-sm h-8">
-                  <SelectValue placeholder="Choisir un enfant" />
-                </SelectTrigger>
-                <SelectContent>
-                  {students.map(s => (
-                    <SelectItem key={s.id} value={s.id}>{s.first_name} {s.last_name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-            <div className="flex items-center gap-1 text-green-300 text-xs">
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-              Connecté
-            </div>
+          <div className="flex items-center gap-1 text-white/70 text-xs flex-shrink-0">
+            <div className="w-1.5 h-1.5 bg-green-300 rounded-full animate-pulse"></div>
+            Connecté
           </div>
         </div>
       </div>
 
-      {/* Tabs */}
+      {/* ── Sélecteur d'enfants ─────────────────────────────────────────────── */}
+      {students.length > 0 && (
+        <ChildSwitcher
+          students={students}
+          selectedId={child?.id}
+          onSelect={setSelectedChildId}
+          classes={classes}
+          grades={grades}
+          exams={exams}
+          subjects={subjects}
+          attendance={attendance}
+        />
+      )}
+
+      {/* ── Onglets ─────────────────────────────────────────────────────────── */}
       <div className="flex gap-2 overflow-x-auto pb-1">
         {TABS.map(tab => (
           <button
@@ -100,8 +132,8 @@ export default function EspaceParent() {
             onClick={() => setActiveTab(tab.id)}
             className={`flex-shrink-0 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
               activeTab === tab.id
-                ? "bg-amber-500 text-white shadow-lg shadow-amber-200"
-                : "bg-white text-slate-600 hover:bg-amber-50 border border-slate-200"
+                ? `${childColor.avatar} text-white shadow-lg`
+                : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200"
             }`}
           >
             {tab.label}
@@ -109,7 +141,7 @@ export default function EspaceParent() {
         ))}
       </div>
 
-      {/* Tab Content */}
+      {/* ── Contenu ─────────────────────────────────────────────────────────── */}
       {activeTab === "notes" && (
         <NotesTab child={child} grades={grades} exams={exams} subjects={subjects} />
       )}
@@ -123,8 +155,107 @@ export default function EspaceParent() {
         <ChatTab child={child} teachers={teachers} messages={messages} />
       )}
       {activeTab === "rdv" && (
-        <RdvTab teachers={teachers} />
+        <RdvTab teachers={teachers} child={child} />
       )}
+    </div>
+  );
+}
+
+// ─── Calcul des stats rapides pour tous les enfants ──────────
+// Fonction PURE — pas un hook — appelable dans un .map() sans problème.
+function computeChildStats(studentId, grades, exams, subjects, attendance) {
+  const overall    = studentWeightedAvg(studentId, grades, exams, subjects);
+  const stuAtt     = attendance.filter(a => a.student_id === studentId);
+  const absences   = stuAtt.filter(a => a.status === "absent").length;
+  const presenceRate = stuAtt.length > 0
+    ? Math.round((stuAtt.filter(a => a.status === "present").length / stuAtt.length) * 100)
+    : 0;
+  return { overall, absences, presenceRate };
+}
+
+// ─── SÉLECTEUR D'ENFANTS ──────────────────────────────────────
+function ChildSwitcher({ students, selectedId, onSelect, classes, grades, exams, subjects, attendance }) {
+  // Pre-calculer les stats pour tous les enfants (un seul useMemo au niveau du composant)
+  const allStats = useMemo(
+    () => Object.fromEntries(
+      students.map(s => [s.id, computeChildStats(s.id, grades, exams, subjects, attendance)])
+    ),
+    [students, grades, exams, subjects, attendance]
+  );
+
+  return (
+    <div className={`${students.length > 1 ? "flex gap-3 overflow-x-auto pb-1" : ""}`}>
+      {students.map((s, idx) => {
+        const isSelected = s.id === selectedId;
+        const color      = CHILD_COLORS[idx % CHILD_COLORS.length];
+        const cls        = classes.find(c => c.id === s.class_id);
+        const stats      = allStats[s.id] || { overall: null, absences: 0, presenceRate: 0 };
+
+        return (
+          <button
+            key={s.id}
+            onClick={() => onSelect(s.id)}
+            className={`flex-shrink-0 rounded-2xl border-2 p-4 text-left transition-all duration-200 ${
+              students.length === 1 ? "w-full" : "min-w-[13rem] max-w-[14rem]"
+            } ${
+              isSelected
+                ? `${color.light} ${color.ring} ring-2 shadow-md`
+                : "bg-white border-slate-200 hover:border-slate-300 hover:shadow-sm"
+            }`}
+          >
+            <div className="flex items-center gap-3 mb-3">
+              {/* Avatar initiales */}
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm flex-shrink-0 ${
+                isSelected ? color.avatar : "bg-slate-300"
+              }`}>
+                {s.first_name?.[0]?.toUpperCase()}{s.last_name?.[0]?.toUpperCase()}
+              </div>
+              <div className="min-w-0">
+                <p className={`font-semibold text-sm truncate ${isSelected ? color.text : "text-slate-700"}`}>
+                  {s.first_name} {s.last_name}
+                </p>
+                <p className="text-xs text-slate-400 truncate">
+                  {cls?.name || "Classe ?"}
+                  {s.level ? ` · ${s.level}` : ""}
+                </p>
+              </div>
+            </div>
+
+            {/* Mini-stats : moyenne + absences */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className={`rounded-lg p-2 text-center ${isSelected ? "bg-white/70" : "bg-slate-50"}`}>
+                <p className={`text-lg font-bold leading-none ${
+                  stats.overall !== null
+                    ? stats.overall >= 14 ? "text-green-600"
+                    : stats.overall >= 10 ? "text-blue-600"
+                    : "text-red-600"
+                  : "text-slate-300"
+                }`}>
+                  {stats.overall !== null ? stats.overall.toFixed(1) : "—"}
+                </p>
+                <p className="text-[10px] text-slate-400 mt-0.5">Moy. /20</p>
+              </div>
+              <div className={`rounded-lg p-2 text-center ${isSelected ? "bg-white/70" : "bg-slate-50"}`}>
+                <p className={`text-lg font-bold leading-none ${
+                  stats.absences === 0 ? "text-green-600"
+                  : stats.absences <= 3 ? "text-orange-500"
+                  : "text-red-600"
+                }`}>
+                  {stats.absences}
+                </p>
+                <p className="text-[10px] text-slate-400 mt-0.5">Absences</p>
+              </div>
+            </div>
+
+            {/* Indicateur de sélection */}
+            {isSelected && students.length > 1 && (
+              <p className={`mt-2 text-center text-[10px] font-semibold ${color.text}`}>
+                ✓ Suivi actif
+              </p>
+            )}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -133,36 +264,31 @@ export default function EspaceParent() {
 function NotesTab({ child, grades, exams, subjects }) {
   const [selectedTrimester, setSelectedTrimester] = useState("all");
 
-  const childGrades = useMemo(() => {
+  // ── Moyennes via gradeUtils (cohérent avec le reste de l'app) ──────────────
+  const bySubjectRaw = useMemo(() => {
     if (!child) return [];
-    return grades.filter(g => g.student_id === child.id && !g.absent && g.score != null);
-  }, [child, grades]);
+    return subjectAveragesForStudent(child.id, grades, exams, subjects, { trimester: selectedTrimester });
+  }, [child, grades, exams, subjects, selectedTrimester]);
 
-  const bySubject = useMemo(() => {
-    return subjects.map(sub => {
-      const subExams = exams.filter(e => e.subject_id === sub.id &&
-        (selectedTrimester === "all" || e.trimester === selectedTrimester));
-      const subGrades = childGrades.filter(g => subExams.map(e => e.id).includes(g.exam_id));
-      if (!subGrades.length) return null;
-      const avg = subGrades.reduce((a, b) => a + b.score, 0) / subGrades.length;
-      const lastGrade = subGrades[subGrades.length - 1];
-      const prevGrade = subGrades[subGrades.length - 2];
-      const trend = prevGrade ? (lastGrade.score > prevGrade.score ? "up" : lastGrade.score < prevGrade.score ? "down" : "stable") : "stable";
-      return { sub, avg, lastScore: lastGrade?.score, trend, count: subGrades.length };
-    }).filter(Boolean).sort((a, b) => b.avg - a.avg);
-  }, [subjects, exams, childGrades, selectedTrimester]);
+  // Adapter au format utilisé dans le rendu : { sub, avg, lastScore, trend, count }
+  const bySubject = useMemo(() =>
+    bySubjectRaw
+      .map(r => ({ sub: r.subject, avg: r.avg, lastScore: r.lastScore, trend: r.trend, count: r.count }))
+      .sort((a, b) => b.avg - a.avg),
+    [bySubjectRaw]
+  );
 
-  const overall = bySubject.length
-    ? bySubject.reduce((s, r) => s + r.avg, 0) / bySubject.length
-    : null;
+  // Moyenne générale pondérée (cohérente avec le bulletin)
+  const overall = useMemo(() => {
+    if (!child) return null;
+    return studentWeightedAvg(child.id, grades, exams, subjects, { trimester: selectedTrimester });
+  }, [child, grades, exams, subjects, selectedTrimester]);
 
   const trendIcon = (t) => t === "up"
     ? <TrendingUp className="w-4 h-4 text-green-500" />
     : t === "down"
     ? <TrendingDown className="w-4 h-4 text-red-500" />
     : <Minus className="w-4 h-4 text-slate-400" />;
-
-  const avgColor = (v) => v >= 14 ? "text-green-600" : v >= 10 ? "text-blue-600" : "text-red-600";
 
   return (
     <div className="space-y-4">
@@ -171,8 +297,8 @@ function NotesTab({ child, grades, exams, subjects }) {
         <Card className="col-span-1 bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200">
           <CardContent className="p-5 text-center">
             <p className="text-xs text-amber-600 uppercase tracking-wide mb-1">Moyenne générale</p>
-            <p className={`text-4xl font-bold ${overall ? avgColor(overall) : "text-slate-400"}`}>
-              {overall ? overall.toFixed(2) : "—"}
+            <p className={`text-4xl font-bold ${overall != null ? avgColorClass(overall) : "text-slate-400"}`}>
+              {overall != null ? overall.toFixed(2) : "—"}
             </p>
             <p className="text-xs text-slate-400">/20</p>
           </CardContent>
@@ -213,7 +339,7 @@ function NotesTab({ child, grades, exams, subjects }) {
               </div>
               {trendIcon(trend)}
               <div className="text-right">
-                <span className={`text-2xl font-bold ${avgColor(avg)}`}>{avg.toFixed(1)}</span>
+                <span className={`text-2xl font-bold ${avgColorClass(avg)}`}>{avg.toFixed(1)}</span>
                 <span className="text-xs text-slate-400">/20</span>
               </div>
               <div className={`w-2 h-2 rounded-full ${avg >= 10 ? "bg-green-400" : "bg-red-400"}`} />
@@ -577,14 +703,18 @@ function ChatTab({ child, teachers, messages }) {
 }
 
 // ─── RDV TAB ─────────────────────────────────────────────────
-function RdvTab({ teachers }) {
-  const [form, setForm] = useState({ teacher_id: "", date: "", time: "", reason: "" });
-  const [submitted, setSubmitted] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [rdvList, setRdvList] = useState([]);
+function RdvTab({ teachers, child }) {
+  const queryClient = useQueryClient();
+  const { userEmail, myChildren } = useCurrentMember();
 
-  const TIMES = ["08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
-    "13:00", "13:30", "14:00", "14:30", "15:00", "15:30", "16:00", "16:30", "17:00"];
+  const EMPTY_FORM = { teacher_id: "", date: "", time: "", reason: "", notes: "" };
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [successMsg, setSuccessMsg] = useState("");
+
+  const TIMES = [
+    "08:00","08:30","09:00","09:30","10:00","10:30","11:00","11:30",
+    "13:00","13:30","14:00","14:30","15:00","15:30","16:00","16:30","17:00",
+  ];
 
   const REASONS = [
     "Suivi des résultats scolaires",
@@ -592,62 +722,141 @@ function RdvTab({ teachers }) {
     "Comportement en classe",
     "Projet d'orientation",
     "Félicitations / Encouragements",
+    "Demande d'information générale",
     "Autre sujet",
   ];
 
-  const selectedTeacher = teachers.find(t => t.id === form.teacher_id);
-
-  const handleSubmit = async () => {
-    if (!form.teacher_id || !form.date || !form.time || !form.reason) return;
-    setSubmitting(true);
-    await new Promise(r => setTimeout(r, 900)); // Simulate async
-    setRdvList(prev => [...prev, {
-      id: Date.now(),
-      teacher: selectedTeacher,
-      date: form.date,
-      time: form.time,
-      reason: form.reason,
-      status: "confirmé"
-    }]);
-    setForm({ teacher_id: "", date: "", time: "", reason: "" });
-    setSubmitted(true);
-    setSubmitting(false);
-    setTimeout(() => setSubmitted(false), 4000);
+  const STATUS_CONFIG = {
+    pending:   { label: "En attente",  cls: "bg-amber-100 text-amber-800"  },
+    confirmed: { label: "Confirmé",    cls: "bg-green-100 text-green-700"  },
+    cancelled: { label: "Annulé",      cls: "bg-slate-100 text-slate-500"  },
+    done:      { label: "Effectué",    cls: "bg-blue-100  text-blue-700"   },
   };
 
-  return (
-    <div className="space-y-4">
-      <h3 className="font-semibold text-slate-800">Prendre un rendez-vous</h3>
+  // ── Chargement des RDV depuis la BDD ──────────────────────────────────────
+  const { data: appointments = [], isLoading } = useQuery({
+    queryKey: ["parentAppointments"],
+    queryFn: () => base44.entities.ParentAppointment.list("-created_date"),
+  });
 
-      {submitted && (
+  // ── Création ──────────────────────────────────────────────────────────────
+  const createRdv = useMutation({
+    mutationFn: (data) => base44.entities.ParentAppointment.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["parentAppointments"] });
+      setForm(EMPTY_FORM);
+      setSuccessMsg("Rendez-vous enregistré et en attente de confirmation !");
+      setTimeout(() => setSuccessMsg(""), 5000);
+    },
+  });
+
+  // ── Annulation ────────────────────────────────────────────────────────────
+  const cancelRdv = useMutation({
+    mutationFn: (id) => base44.entities.ParentAppointment.update(id, { status: "cancelled" }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["parentAppointments"] }),
+  });
+
+  const selectedTeacher = teachers.find(t => t.id === form.teacher_id);
+  const canSubmit = form.teacher_id && form.date && form.time && form.reason && !createRdv.isPending;
+
+  const handleSubmit = () => {
+    if (!canSubmit) return;
+    createRdv.mutate({
+      parent_id:    null,          // sera rempli côté serveur si auth parent
+      parent_name:  userEmail || "Parent",
+      student_id:   child?.id || null,
+      teacher_id:   form.teacher_id,
+      teacher_name: `${selectedTeacher?.first_name || ""} ${selectedTeacher?.last_name || ""}`.trim(),
+      date:         form.date,
+      time:         form.time,
+      reason:       form.reason,
+      notes:        form.notes || null,
+      status:       "pending",
+    });
+  };
+
+  // Trier : à venir d'abord, ensuite passés
+  const sortedRdvs = useMemo(() => {
+    return [...appointments].sort((a, b) => {
+      const da = new Date(`${a.date}T${a.time}`);
+      const db = new Date(`${b.date}T${b.time}`);
+      const now = new Date();
+      const aFuture = da >= now;
+      const bFuture = db >= now;
+      if (aFuture && !bFuture) return -1;
+      if (!aFuture && bFuture) return 1;
+      return aFuture ? da - db : db - da; // futurs ASC, passés DESC
+    });
+  }, [appointments]);
+
+  const upcoming = sortedRdvs.filter(r => {
+    const d = new Date(`${r.date}T${r.time}`);
+    return d >= new Date() && r.status !== "cancelled";
+  });
+  const past = sortedRdvs.filter(r => {
+    const d = new Date(`${r.date}T${r.time}`);
+    return d < new Date() || r.status === "cancelled";
+  });
+
+  return (
+    <div className="space-y-5">
+      {/* ── En-tête ── */}
+      <div className="flex items-center justify-between">
+        <h3 className="font-semibold text-slate-800">Prendre un rendez-vous</h3>
+        {upcoming.length > 0 && (
+          <Badge className="bg-amber-100 text-amber-800">
+            {upcoming.length} RDV à venir
+          </Badge>
+        )}
+      </div>
+
+      {/* ── Succès ── */}
+      {successMsg && (
         <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-xl text-green-700">
-          <CalendarCheck className="w-5 h-5" />
+          <CalendarCheck className="w-5 h-5 flex-shrink-0" />
           <div>
-            <p className="font-semibold text-sm">Rendez-vous confirmé !</p>
-            <p className="text-xs">Un email de confirmation sera envoyé automatiquement.</p>
+            <p className="font-semibold text-sm">Rendez-vous enregistré !</p>
+            <p className="text-xs">{successMsg}</p>
           </div>
         </div>
       )}
 
+      {/* ── Erreur ── */}
+      {createRdv.isError && (
+        <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+          Erreur : {createRdv.error?.message || "Impossible d'enregistrer le rendez-vous."}
+        </div>
+      )}
+
+      {/* ── Formulaire ── */}
       <Card>
         <CardContent className="p-5 space-y-4">
+          {/* Enseignant */}
           <div>
-            <label className="text-sm font-medium text-slate-700 mb-2 block">Enseignant</label>
+            <label className="text-sm font-medium text-slate-700 mb-1.5 block">
+              Enseignant <span className="text-red-500">*</span>
+            </label>
             <Select value={form.teacher_id} onValueChange={v => setForm(f => ({ ...f, teacher_id: v }))}>
               <SelectTrigger>
-                <SelectValue placeholder="Choisir un enseignant..." />
+                <SelectValue placeholder="Choisir un enseignant…" />
               </SelectTrigger>
               <SelectContent>
                 {teachers.map(t => (
-                  <SelectItem key={t.id} value={t.id}>{t.first_name} {t.last_name}</SelectItem>
+                  <SelectItem key={t.id} value={t.id}>
+                    {t.first_name} {t.last_name}
+                    {t.email ? ` — ${t.email}` : ""}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
+          {/* Date + Heure */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-medium text-slate-700 mb-2 block">Date</label>
+              <label className="text-sm font-medium text-slate-700 mb-1.5 block">
+                Date <span className="text-red-500">*</span>
+              </label>
               <Input
                 type="date"
                 value={form.date}
@@ -656,10 +865,12 @@ function RdvTab({ teachers }) {
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-slate-700 mb-2 block">Horaire</label>
+              <label className="text-sm font-medium text-slate-700 mb-1.5 block">
+                Horaire <span className="text-red-500">*</span>
+              </label>
               <Select value={form.time} onValueChange={v => setForm(f => ({ ...f, time: v }))}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Choisir..." />
+                  <SelectValue placeholder="Choisir…" />
                 </SelectTrigger>
                 <SelectContent>
                   {TIMES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
@@ -668,11 +879,14 @@ function RdvTab({ teachers }) {
             </div>
           </div>
 
+          {/* Motif */}
           <div>
-            <label className="text-sm font-medium text-slate-700 mb-2 block">Motif</label>
+            <label className="text-sm font-medium text-slate-700 mb-1.5 block">
+              Motif <span className="text-red-500">*</span>
+            </label>
             <Select value={form.reason} onValueChange={v => setForm(f => ({ ...f, reason: v }))}>
               <SelectTrigger>
-                <SelectValue placeholder="Sélectionner un motif..." />
+                <SelectValue placeholder="Sélectionner un motif…" />
               </SelectTrigger>
               <SelectContent>
                 {REASONS.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
@@ -680,37 +894,136 @@ function RdvTab({ teachers }) {
             </Select>
           </div>
 
+          {/* Notes optionnelles */}
+          <div>
+            <label className="text-sm font-medium text-slate-700 mb-1.5 block">
+              Message / précisions <span className="text-xs text-slate-400">(optionnel)</span>
+            </label>
+            <Textarea
+              value={form.notes}
+              onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+              placeholder="Décrivez brièvement votre demande…"
+              rows={3}
+              className="resize-none"
+            />
+          </div>
+
           <Button
             onClick={handleSubmit}
-            disabled={!form.teacher_id || !form.date || !form.time || !form.reason || submitting}
+            disabled={!canSubmit}
             className="w-full bg-amber-500 hover:bg-amber-600 gap-2"
           >
-            {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CalendarCheck className="w-4 h-4" />}
-            Confirmer le rendez-vous
+            {createRdv.isPending
+              ? <Loader2 className="w-4 h-4 animate-spin" />
+              : <CalendarCheck className="w-4 h-4" />
+            }
+            Demander le rendez-vous
           </Button>
         </CardContent>
       </Card>
 
-      {/* Upcoming RDVs */}
-      {rdvList.length > 0 && (
-        <div className="space-y-2">
-          <h4 className="text-sm font-semibold text-slate-700">Mes rendez-vous</h4>
-          {rdvList.map(rdv => (
-            <Card key={rdv.id} className="border-amber-200 bg-amber-50">
-              <CardContent className="p-4 flex items-center gap-4">
-                <div className="w-10 h-10 bg-amber-500 rounded-xl flex items-center justify-center text-white">
-                  <Calendar className="w-5 h-5" />
-                </div>
-                <div className="flex-1">
-                  <p className="font-medium text-sm">{rdv.teacher?.first_name} {rdv.teacher?.last_name}</p>
-                  <p className="text-xs text-slate-500">{new Date(rdv.date).toLocaleDateString("fr-FR")} à {rdv.time}</p>
-                  <p className="text-xs text-amber-700">{rdv.reason}</p>
-                </div>
-                <Badge className="bg-green-100 text-green-700">✓ {rdv.status}</Badge>
-              </CardContent>
-            </Card>
-          ))}
+      {/* ── Rendez-vous à venir ── */}
+      {isLoading ? (
+        <div className="flex justify-center py-6">
+          <Loader2 className="w-6 h-6 text-amber-400 animate-spin" />
         </div>
+      ) : (
+        <>
+          {upcoming.length > 0 && (
+            <div className="space-y-2">
+              <h4 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                <CalendarCheck className="w-4 h-4 text-amber-500" />
+                Rendez-vous à venir ({upcoming.length})
+              </h4>
+              {upcoming.map(rdv => {
+                const cfg = STATUS_CONFIG[rdv.status] || STATUS_CONFIG.pending;
+                const dateStr = (() => {
+                  try {
+                    return new Date(rdv.date + "T00:00:00").toLocaleDateString("fr-FR", {
+                      weekday: "short", day: "numeric", month: "long",
+                    });
+                  } catch { return rdv.date; }
+                })();
+                return (
+                  <Card key={rdv.id} className="border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50">
+                    <CardContent className="p-4 flex items-center gap-4">
+                      {/* Mini calendrier */}
+                      <div className="flex flex-col items-center justify-center w-12 h-12 bg-amber-500 rounded-xl text-white flex-shrink-0">
+                        <span className="text-[10px] font-semibold uppercase leading-none opacity-80 mt-1">
+                          {new Date(rdv.date + "T00:00:00").toLocaleDateString("fr-FR", { month: "short" })}
+                        </span>
+                        <span className="text-xl font-bold leading-tight">
+                          {new Date(rdv.date + "T00:00:00").getDate()}
+                        </span>
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm text-slate-900">
+                          {rdv.teacher_name || "Enseignant"}
+                        </p>
+                        <p className="text-xs text-slate-500">{dateStr} à {rdv.time}</p>
+                        <p className="text-xs text-amber-700 mt-0.5 truncate">{rdv.reason}</p>
+                        {rdv.notes && (
+                          <p className="text-xs text-slate-400 mt-0.5 italic truncate">"{rdv.notes}"</p>
+                        )}
+                      </div>
+
+                      <div className="flex flex-col items-end gap-2">
+                        <Badge className={cfg.cls}>{cfg.label}</Badge>
+                        {rdv.status === "pending" && (
+                          <button
+                            onClick={() => cancelRdv.mutate(rdv.id)}
+                            disabled={cancelRdv.isPending}
+                            className="text-xs text-red-400 hover:text-red-600 underline underline-offset-2 transition-colors"
+                          >
+                            Annuler
+                          </button>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+
+          {/* ── Historique ── */}
+          {past.length > 0 && (
+            <details className="group">
+              <summary className="cursor-pointer text-sm font-semibold text-slate-500 flex items-center gap-2 select-none list-none py-1">
+                <ChevronDown className="w-4 h-4 transition-transform group-open:rotate-180" />
+                Historique ({past.length})
+              </summary>
+              <div className="space-y-2 mt-2">
+                {past.map(rdv => {
+                  const cfg = STATUS_CONFIG[rdv.status] || STATUS_CONFIG.done;
+                  return (
+                    <Card key={rdv.id} className="opacity-70 border-slate-200">
+                      <CardContent className="p-3 flex items-center gap-3">
+                        <Calendar className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-slate-700">{rdv.teacher_name || "Enseignant"}</p>
+                          <p className="text-xs text-slate-400">
+                            {new Date(rdv.date + "T00:00:00").toLocaleDateString("fr-FR")} à {rdv.time} — {rdv.reason}
+                          </p>
+                        </div>
+                        <Badge className={`${cfg.cls} text-xs`}>{cfg.label}</Badge>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </details>
+          )}
+
+          {appointments.length === 0 && !successMsg && (
+            <div className="text-center py-8 text-slate-400">
+              <Calendar className="w-10 h-10 mx-auto mb-2 opacity-40" />
+              <p className="text-sm">Aucun rendez-vous pour le moment</p>
+              <p className="text-xs mt-1">Remplissez le formulaire ci-dessus pour en prendre un</p>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

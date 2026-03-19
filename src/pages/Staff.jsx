@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import PageHeader from "@/components/ui/PageHeader";
 import DataTable from "@/components/ui/DataTable";
+import CredentialsModal from "@/components/shared/CredentialsModal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,6 +57,7 @@ export default function Staff() {
   const [staffToDelete, setStaffToDelete] = useState(null);
   const [search, setSearch] = useState("");
   const [saving, setSaving] = useState(false);
+  const [accountModal, setAccountModal] = useState(null);
 
   const [formData, setFormData] = useState({
     first_name: "",
@@ -120,13 +122,25 @@ export default function Staff() {
       salary: formData.salary ? Number(formData.salary) : null,
     };
 
-    if (selectedStaff) {
-      await base44.entities.Staff.update(selectedStaff.id, data);
-    } else {
-      await base44.entities.Staff.create(data);
+    try {
+      if (selectedStaff) {
+        await base44.entities.Staff.update(selectedStaff.id, data);
+      } else {
+        const result = await base44.entities.Staff.create(data);
+        if (result?._account) {
+          setAccountModal({
+            title: "Compte personnel créé",
+            login: result._account.login,
+            provisional_password: result._account.provisional_password,
+            full_name: `${result.first_name} ${result.last_name}`,
+            typeLabel: "Personnel",
+            notify_email: result._account.notify_email,
+          });
+        }
+      }
+    } finally {
+      setSaving(false);
     }
-
-    setSaving(false);
     queryClient.invalidateQueries({ queryKey: ["staff"] });
     setFormOpen(false);
   };
@@ -370,6 +384,12 @@ export default function Staff() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <CredentialsModal
+        open={!!accountModal}
+        onClose={() => setAccountModal(null)}
+        credentials={accountModal}
+      />
     </div>
   );
 }

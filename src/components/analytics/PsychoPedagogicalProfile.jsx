@@ -394,8 +394,8 @@ function ProfileCard({ student, profile, classes }) {
 
 // ─── Main Component ─────────────────────────────────────────────────────────────
 export default function PsychoPedagogicalProfile({ classes, students, grades, exams, subjects, attendance, sanctions }) {
-  const [filterClass, setFilterClass] = useState("");
-  const [filterAlert, setFilterAlert] = useState("");
+  const [filterClass, setFilterClass] = useState("_all");
+  const [filterAlert, setFilterAlert] = useState("_all");
 
   const profiles = useMemo(() => {
     return students.filter(s => s.status === "active").map(student => ({
@@ -406,7 +406,7 @@ export default function PsychoPedagogicalProfile({ classes, students, grades, ex
 
   const filtered = useMemo(() => {
     let res = profiles;
-    if (filterClass) res = res.filter(p => p.student.class_id === filterClass);
+    if (filterClass && filterClass !== "_all") res = res.filter(p => p.student.class_id === filterClass);
     if (filterAlert === "demotivation") res = res.filter(p => p.profile.demotivation >= 35);
     if (filterAlert === "stress") res = res.filter(p => p.profile.stress >= 35);
     if (filterAlert === "visuel") res = res.filter(p => p.profile.dominantStyle.name === "Visuel");
@@ -530,14 +530,14 @@ export default function PsychoPedagogicalProfile({ classes, students, grades, ex
         <Select value={filterClass} onValueChange={setFilterClass}>
           <SelectTrigger className="w-40 h-8 text-xs"><SelectValue placeholder="Toutes les classes" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value={null}>Toutes les classes</SelectItem>
+            <SelectItem value="_all">Toutes les classes</SelectItem>
             {classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={filterAlert} onValueChange={setFilterAlert}>
           <SelectTrigger className="w-48 h-8 text-xs"><SelectValue placeholder="Filtrer par profil" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value={null}>Tous les profils</SelectItem>
+            <SelectItem value="_all">Tous les profils</SelectItem>
             <SelectItem value="demotivation">😔 Démotivation détectée</SelectItem>
             <SelectItem value="stress">⚡ Stress détecté</SelectItem>
             <SelectItem value="visuel">👁️ Style visuel</SelectItem>

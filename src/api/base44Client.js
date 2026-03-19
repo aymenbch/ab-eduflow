@@ -129,9 +129,24 @@ function showAccountCreatedNotification(account, entityType) {
 /* ─── HTTP helpers ───────────────────────────────────────────────────────── */
 
 async function request(method, path, body) {
+  // Envoyer l'identité et le système éducatif pour les filtres d'accès côté backend
+  const sessionHeaders = {};
+  try {
+    const raw = localStorage.getItem('edugest_session');
+    if (raw) {
+      const s = JSON.parse(raw);
+      // Préféré : token HMAC signé côté serveur (non forgeable)
+      if (s.token) sessionHeaders['X-Session-Token'] = s.token;
+      // Legacy fallback : X-User-Id (déprécié — conservé pour compatibilité)
+      if (s.id) sessionHeaders['X-User-Id'] = s.id;
+    }
+    const eduSystem = localStorage.getItem('edugest_education_system') || 'francais';
+    sessionHeaders['X-Education-System'] = eduSystem;
+  } catch {}
+
   const options = {
     method,
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...sessionHeaders },
   };
   if (body !== undefined) options.body = JSON.stringify(body);
 
@@ -203,9 +218,9 @@ const integrations = {
       const data = await res.json();
       return { file_url: data.file_url };
     },
-    InvokeLLM: async () => {
+    InvokeLLM: async ({ prompt, response_json_schema } = {}) => {
       console.warn('[InvokeLLM] LLM integration is disabled in local mode.');
-      return { result: '', choices: [{ message: { content: '' } }] };
+      return { _localMode: true };
     },
     SendEmail: async (params) => {
       console.warn('[SendEmail] Email integration is disabled in local mode.', params);

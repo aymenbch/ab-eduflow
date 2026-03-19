@@ -75,14 +75,98 @@
   }
 }
 
-
-
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
+  * { @apply border-border outline-ring/50; }
+  body { @apply bg-background text-foreground; }
+}
 
-  body {
-    @apply bg-background text-foreground;
-  }
+/* ══════════════════════════════════════════════
+   EDUGEST — SYSTÈME DE THÈMES (3 modes)
+   ══════════════════════════════════════════════ */
+
+html, html.theme-light {
+  --theme-app-bg:             #f8fafc;
+  --theme-sidebar-bg:         #ffffff;
+  --theme-sidebar-border:     #e2e8f0;
+  --theme-header-glass:       rgba(255,255,255,0.92);
+  --theme-header-border:      #e2e8f0;
+  --theme-nav-hover:          #f1f5f9;
+  --theme-section-divider:    #f1f5f9;
+  --theme-user-hover:         #f1f5f9;
+  --theme-accent-from:        #3b82f6;
+  --theme-accent-to:          #2563eb;
+  --theme-accent-shadow:      rgba(59,130,246,0.4);
+  --theme-sidebar-text-hi:    #0f172a;
+  --theme-sidebar-text-lo:    #64748b;
+  --theme-sidebar-text-muted: #94a3b8;
+  --theme-main-text-hi:       #0f172a;
+  --theme-main-text-lo:       #64748b;
+}
+
+html.theme-dark {
+  --theme-app-bg:             #0f172a;
+  --theme-sidebar-bg:         #1e293b;
+  --theme-sidebar-border:     #334155;
+  --theme-header-glass:       rgba(15,23,42,0.95);
+  --theme-header-border:      #334155;
+  --theme-nav-hover:          rgba(51,65,85,0.7);
+  --theme-section-divider:    #334155;
+  --theme-user-hover:         rgba(51,65,85,0.7);
+  --theme-accent-from:        #3b82f6;
+  --theme-accent-to:          #2563eb;
+  --theme-accent-shadow:      rgba(59,130,246,0.35);
+  --theme-sidebar-text-hi:    #f1f5f9;
+  --theme-sidebar-text-lo:    #94a3b8;
+  --theme-sidebar-text-muted: #64748b;
+  --theme-main-text-hi:       #f1f5f9;
+  --theme-main-text-lo:       #94a3b8;
+}
+
+html.theme-violet {
+  --theme-app-bg:             #faf5ff;
+  --theme-sidebar-bg:         #2e1065;
+  --theme-sidebar-border:     #3b0764;
+  --theme-header-glass:       rgba(250,245,255,0.92);
+  --theme-header-border:      #e9d5ff;
+  --theme-nav-hover:          rgba(167,139,250,0.15);
+  --theme-section-divider:    #ede9fe;
+  --theme-user-hover:         rgba(167,139,250,0.15);
+  --theme-accent-from:        #7c3aed;
+  --theme-accent-to:          #6d28d9;
+  --theme-accent-shadow:      rgba(124,58,237,0.4);
+  --theme-sidebar-text-hi:    #f3e8ff;
+  --theme-sidebar-text-lo:    #c4b5fd;
+  --theme-sidebar-text-muted: #a78bfa;
+  --theme-main-text-hi:       #1e1b4b;
+  --theme-main-text-lo:       #6b7280;
+}
+
+/* Classes layout thémées */
+.layout-root         { background: var(--theme-app-bg); }
+.layout-sidebar      { background: var(--theme-sidebar-bg) !important; border-color: var(--theme-sidebar-border) !important; }
+.layout-border-light { border-color: var(--theme-section-divider) !important; }
+.layout-logo-accent  { background: linear-gradient(135deg, var(--theme-accent-from), var(--theme-accent-to)) !important; box-shadow: 0 4px 10px var(--theme-accent-shadow) !important; }
+.layout-header-glass { backdrop-filter: blur(12px); background: var(--theme-header-glass) !important; border-color: var(--theme-header-border) !important; }
+
+.sidebar-text-hi    { color: var(--theme-sidebar-text-hi)    !important; }
+.sidebar-text-lo    { color: var(--theme-sidebar-text-lo)    !important; }
+.sidebar-text-muted { color: var(--theme-sidebar-text-muted) !important; }
+.main-text-hi       { color: var(--theme-main-text-hi)       !important; }
+
+.layout-nav-item { color: var(--theme-sidebar-text-lo); transition: all 0.2s ease; }
+.layout-nav-item:hover { background: var(--theme-nav-hover) !important; color: var(--theme-sidebar-text-hi) !important; }
+.layout-user-btn:hover { background: var(--theme-user-hover) !important; }
+
+.sidebar-item { transition: all 0.2s ease; }
+.sidebar-item:hover { transform: translateX(4px); }
+.sidebar-item.active {
+  background: linear-gradient(90deg, var(--theme-accent-from,#3b82f6) 0%, var(--theme-accent-to,#2563eb) 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px var(--theme-accent-shadow,rgba(59,130,246,0.4)) !important;
+}
+
+.layout-root, .layout-sidebar, .layout-header-glass,
+.layout-nav-item, .sidebar-text-hi, .sidebar-text-lo,
+.sidebar-text-muted, .main-text-hi {
+  transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
 }

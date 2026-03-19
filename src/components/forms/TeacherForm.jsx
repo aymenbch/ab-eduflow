@@ -95,15 +95,18 @@ export default function TeacherForm({ open, onClose, teacher, onSave }) {
       salary: formData.salary ? Number(formData.salary) : null,
     };
 
-    if (teacher) {
-      await base44.entities.Teacher.update(teacher.id, data);
-    } else {
-      await base44.entities.Teacher.create(data);
+    try {
+      if (teacher) {
+        await base44.entities.Teacher.update(teacher.id, data);
+        onSave(null);
+      } else {
+        const result = await base44.entities.Teacher.create(data);
+        onSave(result); // result._account contient les identifiants créés automatiquement
+      }
+      onClose();
+    } finally {
+      setSaving(false);
     }
-
-    setSaving(false);
-    onSave();
-    onClose();
   };
 
   return (

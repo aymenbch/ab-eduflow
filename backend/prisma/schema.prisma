@@ -16,9 +16,15 @@ model AppUser {
   member_type     String    @default("none")
   member_id       String?
   status          String    @default("active")
-  must_change_pin Boolean   @default(false)
-  last_login      DateTime?
-  created_date    DateTime  @default(now())
+  must_change_pin  Boolean   @default(false)
+  last_login       DateTime?
+  failed_attempts  Int       @default(0)
+  locked_until     DateTime?
+  created_date     DateTime  @default(now())
+  email            String?
+  phone            String?
+  address          String?
+  photo            String?
 }
 
 model Student {
@@ -37,6 +43,28 @@ model Student {
   parent_email    String?
   medical_notes   String?
   created_date    DateTime @default(now())
+}
+
+model StudentGuardian {
+  id           String   @id @default(uuid())
+  student_id   String
+  parent_id    String
+  relation     String   @default("tuteur")
+  is_primary   Boolean  @default(false)
+  created_date DateTime @default(now())
+
+  @@unique([student_id, parent_id], name: "student_parent_unique")
+}
+
+model Parent {
+  id           String   @id @default(uuid())
+  first_name   String
+  last_name    String
+  phone        String?
+  email        String?  @unique
+  address      String?
+  relation     String?
+  created_date DateTime @default(now())
 }
 
 model Teacher {
@@ -87,9 +115,14 @@ model Subject {
   id           String   @id @default(uuid())
   name         String
   code         String?
-  coefficient  Float?
+  coefficient  Float?   @default(1)
   level        String?
   description  String?
+  color        String?  @default("#3B82F6")
+  category     String?  @default("general")
+  weekly_hours Float?
+  is_evaluable Boolean  @default(true)
+  status       String   @default("active")
   created_date DateTime @default(now())
 }
 
@@ -100,20 +133,41 @@ model Grade {
   score        Float?
   comment      String?
   absent       Boolean  @default(false)
+  grade_status String   @default("present")
   created_date DateTime @default(now())
 }
 
-model Exam {
+model GradeHistory {
   id           String   @id @default(uuid())
-  name         String
-  class_id     String?
-  subject_id   String?
-  teacher_id   String?
-  date         String?
-  type         String?
-  coefficient  Float?
-  max_score    Float?
-  created_date DateTime @default(now())
+  grade_id     String
+  student_id   String
+  exam_id      String
+  old_score    Float?
+  new_score    Float?
+  old_status   String?
+  new_status   String?
+  reason       String
+  changed_by   String?
+  changer_name String?
+  changed_at   DateTime @default(now())
+}
+
+model Exam {
+  id            String   @id @default(uuid())
+  title         String
+  class_id      String?
+  subject_id    String?
+  teacher_id    String?
+  date          String?
+  type          String?
+  coefficient   Float?
+  max_score     Float?
+  trimester     String?
+  description   String?
+  period_id     String?
+  locked        Boolean  @default(false)
+  grading_scale String   @default("/20")
+  created_date  DateTime @default(now())
 }
 
 model Attendance {
@@ -131,37 +185,61 @@ model Schedule {
   class_id     String
   subject_id   String?
   teacher_id   String?
-  day_of_week  Int
+  room_id      String?
+  day_of_week  String
   start_time   String
   end_time     String
-  room         String?
-  created_date DateTime @default(now())
-}
-
-model ScheduleEvent {
-  id           String   @id @default(uuid())
-  title        String
-  class_id     String?
-  date         String?
-  start_time   String?
-  end_time     String?
-  type         String?
+  status       String   @default("brouillon")
+  school_year  String?
   description  String?
   created_date DateTime @default(now())
 }
 
+model ScheduleEvent {
+  id               String   @id @default(uuid())
+  schedule_id      String?
+  class_id         String?
+  subject_id       String?
+  teacher_id       String?
+  event_date       String?
+  start_time       String?
+  end_time         String?
+  event_type       String?
+  status           String   @default("active")
+  description      String?
+  replacement_date String?
+  replacement_time String?
+  declared_by      String?
+  title            String?
+  created_date     DateTime @default(now())
+}
+
 model SchoolYear {
   id            String    @id @default(uuid())
-  year          String
+  name          String
   start_date    String?
   end_date      String?
   status        String    @default("active")
   archived_date DateTime?
+  passing_grade Float?
   created_date  DateTime  @default(now())
+}
+
+model Period {
+  id             String   @id @default(uuid())
+  school_year_id String
+  name           String
+  type           String   @default("trimestre")
+  order          Int      @default(1)
+  start_date     String?
+  end_date       String?
+  status         String   @default("open")
+  created_date   DateTime @default(now())
 }
 
 model Message {
   id             String   @id @default(uuid())
+  sender_id      String?
   sender_type    String?
   sender_name    String?
   recipient_type String?
@@ -333,5 +411,55 @@ model Sprint {
   end_date     String?
   status       String   @default("active")
   goal         String?
+  created_date DateTime @default(now())
+}
+
+model Room {
+  id           String   @id @default(uuid())
+  name         String
+  code         String?  @unique
+  type         String   @default("classroom")
+  capacity     Int?
+  building     String?
+  floor        String?
+  equipment    String   @default("[]")
+  status       String   @default("active")
+  description  String?
+  created_date DateTime @default(now())
+}
+
+model VisioSession {
+  id           String   @id @default(uuid())
+  title        String
+  provider     String   @default("jitsi")
+  meeting_url  String?
+  meeting_id   String?
+  password     String?
+  class_id     String?
+  schedule_id  String?
+  context      String   @default("cours")
+  hosted_by    String?
+  host_name    String?
+  scheduled_at String?
+  duration     Int      @default(60)
+  status       String   @default("scheduled")
+  school_year  String?
+  description  String?
+  participants String   @default("[]")
+  created_date DateTime @default(now())
+}
+
+model ParentAppointment {
+  id           String   @id @default(uuid())
+  parent_id    String?
+  parent_name  String?
+  student_id   String?
+  teacher_id   String?
+  teacher_name String?
+  date         String
+  time         String
+  reason       String?
+  notes        String?
+  status       String   @default("pending")
   created_date DateTime @default(now())
 }

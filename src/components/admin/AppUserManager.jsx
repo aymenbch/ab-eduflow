@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { hashPin } from "@/components/auth/appAuth";
@@ -9,9 +9,11 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { ROLES } from "@/components/roles/roles";
+import { getSession } from "@/components/auth/appAuth";
+import { getCurrentSystemConfig } from "@/components/config/educationSystems";
 import {
   UserPlus, Search, MoreVertical, Edit, Trash2, Ban, Key, Loader2,
-  CheckCircle2, XCircle, Copy, Printer, ShieldCheck,
+  CheckCircle2, XCircle, Copy, Printer, ShieldCheck, AlertCircle, Lock, Unlock, ShieldOff,
 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
@@ -21,6 +23,14 @@ const MEMBER_TYPES = [
   { value: "Staff", label: "Personnel" },
   { value: "none", label: "Aucun (admin)" },
 ];
+
+// Rôles autorisés par type de membre
+const MEMBER_TYPE_ROLES = {
+  Student: ["eleve", "parent"],
+  Teacher: ["enseignant"],
+  Staff:   ["secretaire", "comptable", "cpe", "directeur_primaire", "directeur_college", "directeur_lycee", "directeur_general", "admin_systeme"],
+  none:    ["admin_systeme", "directeur_general"],
+};
 
 /* ─── Credentials display modal ────────────────────────────────────────── */
 
@@ -161,6 +171,58 @@ function AppUserFormModal({ open, onClose, onSaved, editUser }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Rôles disponibles pour le type de membre sélectionné
+  const availableRoles = MEMBER_TYPE_ROLES[form.member_type] || Object.keys(ROLES);
+
+  // Cycles assignés (pour secretaire / cpe)
+  const systemCycles = getCurrentSystemConfig().cycles;
+  const showCycleEditor = form.role === "secretaire" || form.role === "cpe";
+  const [assignedCycles, setAssignedCycles] = useState(() => {
+    try { return editUser?.assigned_cycles ? JSON.parse(editUser.assigned_cycles) : []; }
+    catch { return []; }
+  });
+  const toggleCycle = (idx) =>
+    setAssignedCycles(prev => prev.includes(idx) ? prev.filter(i => i !== idx) : [...prev, idx]);
+
+  // ── Vérification : membre a déjà un compte actif ─────────────────────────
+  const [memberAccount, setMemberAccount] = useState(null); // null | { login, role, ... }
+
+  // ── Vérification d'unicité du login ──────────────────────────────────────
+  // null = pas encore vérifié / "checking" / "available" / "taken"
+  const [loginStatus, setLoginStatus] = useState(null);
+  const debounceRef = useRef(null);
+
+  useEffect(() => {
+    const login = form.login.trim().toLowerCase();
+
+    // En mode édition, on ne vérifie que si le login a changé
+    if (isEdit && login === editUser.login.toLowerCase()) {
+      setLoginStatus(null);
+      return;
+    }
+
+    if (login.length < 3) {
+      setLoginStatus(null);
+      return;
+    }
+
+    setLoginStatus("checking");
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const res = await base44.functions.invoke("appCheckLogin", {
+          login,
+          exclude_id: isEdit ? editUser.id : undefined,
+        });
+        setLoginStatus(res.available ? "available" : "taken");
+      } catch {
+        setLoginStatus(null);
+      }
+    }, 400);
+
+    return () => clearTimeout(debounceRef.current);
+  }, [form.login]); // eslint-disable-line
+
   const { data: students = [] } = useQuery({ queryKey: ["students"], queryFn: () => base44.entities.Student.list() });
   const { data: teachers = [] } = useQuery({ queryKey: ["teachers"], queryFn: () => base44.entities.Teacher.list() });
   const { data: staff = [] } = useQuery({ queryKey: ["staff"], queryFn: () => base44.entities.Staff.list() });
@@ -172,7 +234,7 @@ function AppUserFormModal({ open, onClose, onSaved, editUser }) {
     return [];
   };
 
-  const handleMemberChange = (memberId) => {
+  const handleMemberChange = async (memberId) => {
     setForm(f => {
       let autoLogin = f.login;
       let autoName = f.full_name;
@@ -188,6 +250,21 @@ function AppUserFormModal({ open, onClose, onSaved, editUser }) {
       }
       return { ...f, member_id: memberId, login: autoLogin, full_name: autoName };
     });
+
+    // Vérifier si ce membre a déjà un compte actif
+    if (memberId) {
+      try {
+        const res = await base44.functions.invoke("appCheckMember", {
+          member_id: memberId,
+          exclude_id: isEdit ? editUser.id : undefined,
+        });
+        setMemberAccount(res.has_account ? res.account : null);
+      } catch {
+        setMemberAccount(null);
+      }
+    } else {
+      setMemberAccount(null);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -205,13 +282,14 @@ function AppUserFormModal({ open, onClose, onSaved, editUser }) {
         member_id: form.member_id || null,
         member_type: form.member_type,
         status: "active",
+        ...(showCycleEditor && { assigned_cycles: assignedCycles }),
       };
-      if (form.pin) {
+      // Modification : on peut changer le mot de passe manuellement
+      if (isEdit && form.pin) {
         payload.pin_hash = await hashPin(form.pin);
-        payload.must_change_pin = !isEdit;
       }
-      await base44.functions.invoke("appUserAdmin", payload);
-      onSaved();
+      const result = await base44.functions.invoke("appUserAdmin", payload);
+      onSaved(result);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -229,7 +307,11 @@ function AppUserFormModal({ open, onClose, onSaved, editUser }) {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium text-slate-700 block mb-1">Type de membre</label>
-              <Select value={form.member_type} onValueChange={v => setForm(f => ({ ...f, member_type: v, member_id: "" }))}>
+              <Select value={form.member_type} onValueChange={v => {
+                const roles = MEMBER_TYPE_ROLES[v] || Object.keys(ROLES);
+                const newRole = roles.includes(form.role) ? form.role : roles[0];
+                setForm(f => ({ ...f, member_type: v, member_id: "", role: newRole }));
+              }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {MEMBER_TYPES.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
@@ -241,13 +323,39 @@ function AppUserFormModal({ open, onClose, onSaved, editUser }) {
               <Select value={form.role} onValueChange={v => setForm(f => ({ ...f, role: v }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {Object.entries(ROLES).map(([key, r]) => (
-                    <SelectItem key={key} value={key}>{r.icon} {r.label}</SelectItem>
-                  ))}
+                  {availableRoles.map(key => {
+                    const r = ROLES[key];
+                    if (!r) return null;
+                    return <SelectItem key={key} value={key}>{r.icon} {r.label}</SelectItem>;
+                  })}
                 </SelectContent>
               </Select>
             </div>
           </div>
+
+          {/* Cycles assignés — visible pour secretaire et CPE */}
+          {showCycleEditor && (
+            <div>
+              <label className="text-sm font-medium text-slate-700 block mb-2">Cycles concernés par le poste</label>
+              <div className="space-y-2 p-3 rounded-lg border border-slate-200 bg-slate-50">
+                {systemCycles.map((cycle, idx) => (
+                  <label key={idx} className="flex items-center gap-3 cursor-pointer group">
+                    <input
+                      type="checkbox"
+                      checked={assignedCycles.includes(idx)}
+                      onChange={() => toggleCycle(idx)}
+                      className="w-4 h-4 rounded border-slate-300 text-blue-600 cursor-pointer"
+                    />
+                    <span className="text-sm text-slate-700 group-hover:text-slate-900">{cycle.name}</span>
+                    <span className="text-xs text-slate-400 ml-auto">{cycle.levels.join(", ")}</span>
+                  </label>
+                ))}
+                {assignedCycles.length === 0 && (
+                  <p className="text-xs text-amber-600 mt-1">⚠️ Aucun cycle — accès à toutes les données.</p>
+                )}
+              </div>
+            </div>
+          )}
 
           {form.member_type !== "none" && (
             <div>
@@ -259,6 +367,23 @@ function AppUserFormModal({ open, onClose, onSaved, editUser }) {
                 </SelectContent>
               </Select>
               <p className="text-xs text-slate-400 mt-1">L'identifiant et le nom sont auto-remplis selon le membre</p>
+
+              {/* Alerte : ce membre a déjà un compte actif */}
+              {memberAccount && !isEdit && (
+                <div className="mt-2 rounded-lg bg-red-50 border border-red-200 px-3 py-2.5">
+                  <p className="text-xs font-semibold text-red-700 flex items-center gap-1.5">
+                    <XCircle className="w-3.5 h-3.5" />
+                    Ce membre a déjà un compte actif
+                  </p>
+                  <p className="text-xs text-red-600 mt-0.5">
+                    Identifiant : <code className="font-mono font-bold">{memberAccount.login}</code>
+                    {" · "}Rôle : {ROLES[memberAccount.role]?.label || memberAccount.role}
+                  </p>
+                  <p className="text-xs text-red-500 mt-1">
+                    Un membre ne peut avoir qu'un seul rôle actif. Modifiez ou désactivez le compte existant.
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
@@ -269,27 +394,64 @@ function AppUserFormModal({ open, onClose, onSaved, editUser }) {
 
           <div>
             <label className="text-sm font-medium text-slate-700 block mb-1">Identifiant de connexion</label>
-            <Input value={form.login} onChange={e => setForm(f => ({ ...f, login: e.target.value }))} placeholder="N° étudiant, email ou téléphone" />
-            <p className="text-xs text-slate-400 mt-1">Élève : numéro étudiant • Enseignant/Parent : email</p>
+            <div className="relative">
+              <Input
+                value={form.login}
+                onChange={e => setForm(f => ({ ...f, login: e.target.value }))}
+                placeholder="N° étudiant, email ou téléphone"
+                className={
+                  loginStatus === "taken"     ? "border-red-400 pr-9 focus-visible:ring-red-300" :
+                  loginStatus === "available" ? "border-green-400 pr-9 focus-visible:ring-green-300" :
+                  "pr-9"
+                }
+              />
+              <span className="absolute right-2.5 top-1/2 -translate-y-1/2">
+                {loginStatus === "checking"  && <Loader2 className="w-4 h-4 text-slate-400 animate-spin" />}
+                {loginStatus === "available" && <CheckCircle2 className="w-4 h-4 text-green-500" />}
+                {loginStatus === "taken"     && <XCircle className="w-4 h-4 text-red-500" />}
+              </span>
+            </div>
+            {loginStatus === "taken" && (
+              <p className="text-xs text-red-600 flex items-center gap-1 mt-1">
+                <AlertCircle className="w-3 h-3" /> Cet identifiant est déjà utilisé
+              </p>
+            )}
+            {loginStatus === "available" && (
+              <p className="text-xs text-green-600 mt-1">✓ Identifiant disponible</p>
+            )}
+            {!loginStatus && (
+              <p className="text-xs text-slate-400 mt-1">Élève : numéro étudiant • Enseignant/Parent : email</p>
+            )}
           </div>
 
-          <div>
-            <label className="text-sm font-medium text-slate-700 block mb-1">
-              {isEdit ? "Nouveau PIN (laisser vide = inchangé)" : "PIN initial — laisser vide pour générer automatiquement"}
-            </label>
-            <Input
-              type="password"
-              value={form.pin}
-              onChange={e => setForm(f => ({ ...f, pin: e.target.value }))}
-              placeholder={isEdit ? "Laisser vide = inchangé" : "Vide = mot de passe provisoire auto-généré"}
-            />
-          </div>
+          {isEdit && (
+            <div>
+              <label className="text-sm font-medium text-slate-700 block mb-1">
+                Nouveau mot de passe (laisser vide = inchangé)
+              </label>
+              <Input
+                type="password"
+                value={form.pin}
+                onChange={e => setForm(f => ({ ...f, pin: e.target.value }))}
+                placeholder="Laisser vide = inchangé"
+              />
+            </div>
+          )}
+          {!isEdit && (
+            <div className="rounded-lg bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-700">
+              🔑 Un mot de passe provisoire sera généré automatiquement et affiché après la création.
+            </div>
+          )}
 
           {error && <p className="text-sm text-red-600 bg-red-50 p-2 rounded-lg">{error}</p>}
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>Annuler</Button>
-            <Button type="submit" disabled={loading} className="bg-blue-600 hover:bg-blue-700">
+            <Button
+              type="submit"
+              disabled={loading || loginStatus === "taken" || loginStatus === "checking" || (!!memberAccount && !isEdit)}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
               {loading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
               {isEdit ? "Enregistrer" : "Créer le compte"}
             </Button>
@@ -303,6 +465,9 @@ function AppUserFormModal({ open, onClose, onSaved, editUser }) {
 /* ─── Main component ─────────────────────────────────────────────────────── */
 
 export default function AppUserManager() {
+  const session = getSession();
+  const isAdmin = session?.role === "admin_systeme";
+
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState("all");
   const [modalOpen, setModalOpen] = useState(false);
@@ -315,15 +480,32 @@ export default function AppUserManager() {
     queryFn: () => base44.functions.invoke("appUserAdmin", { action: "list" }),
   });
 
-  const handleSaved = () => {
+  const handleSaved = (result) => {
     queryClient.invalidateQueries({ queryKey: ["app_users"] });
     setModalOpen(false);
     setEditUser(null);
+    // Afficher les identifiants après création d'un compte
+    if (result?.provisional_password) {
+      const typeLabels = { Student: "Élève", Teacher: "Enseignant", Staff: "Personnel", none: "Admin" };
+      setCredModal({
+        title: "Compte créé avec succès",
+        login: result.login,
+        provisional_password: result.provisional_password,
+        full_name: result.full_name || result.login,
+        typeLabel: typeLabels[result.member_type] || result.role,
+        notify_email: null,
+      });
+    }
   };
 
   const handleDelete = async (user) => {
     if (!confirm(`Supprimer le compte de ${user.full_name || user.login} ? Cette action est irréversible.`)) return;
     await base44.functions.invoke("appUserAdmin", { action: "delete", id: user.id });
+    queryClient.invalidateQueries({ queryKey: ["app_users"] });
+  };
+
+  const handleUnlock = async (user) => {
+    await base44.functions.invoke("appUserAdmin", { action: "unlock", id: user.id });
     queryClient.invalidateQueries({ queryKey: ["app_users"] });
   };
 
@@ -334,7 +516,7 @@ export default function AppUserManager() {
   };
 
   const handleResetPin = async (user) => {
-    if (!confirm(`Réinitialiser le PIN de ${user.full_name || user.login} ?\nUn nouveau mot de passe provisoire sera généré.`)) return;
+    if (!confirm(`Réinitialiser le mot de passe de ${user.full_name || user.login} ?\nUn nouveau mot de passe provisoire sera généré.`)) return;
     const result = await base44.functions.invoke("appUserAdmin", { action: "reset_pin", id: user.id });
     queryClient.invalidateQueries({ queryKey: ["app_users"] });
 
@@ -364,6 +546,23 @@ export default function AppUserManager() {
     suspended: appUsers.filter(u => u.status === "suspended").length,
   };
 
+  // Seul l'admin système peut gérer les comptes utilisateurs
+  if (!isAdmin) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[40vh] gap-4 text-center">
+        <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center">
+          <ShieldOff className="w-8 h-8 text-red-500" />
+        </div>
+        <div>
+          <p className="font-semibold text-slate-800 text-lg">Accès refusé</p>
+          <p className="text-slate-500 text-sm mt-1">
+            La gestion des comptes utilisateurs est réservée à l'administrateur système.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       {/* Stats bar */}
@@ -371,7 +570,7 @@ export default function AppUserManager() {
         {[
           { label: "Total", value: stats.total, color: "bg-blue-50 text-blue-700" },
           { label: "Actifs", value: stats.active, color: "bg-green-50 text-green-700" },
-          { label: "PIN à changer", value: stats.pending, color: "bg-amber-50 text-amber-700" },
+          { label: "MDP à changer", value: stats.pending, color: "bg-amber-50 text-amber-700" },
           { label: "Suspendus", value: stats.suspended, color: "bg-red-50 text-red-700" },
         ].map(s => (
           <div key={s.label} className={`rounded-xl p-3 text-center ${s.color}`}>
@@ -416,8 +615,9 @@ export default function AppUserManager() {
             const role = ROLES[user.role];
             const isPending = user.must_change_pin;
             const isSuspended = user.status === "suspended";
+            const isLocked = user.locked_until && new Date() < new Date(user.locked_until);
             return (
-              <Card key={user.id} className={`border-l-4 transition-opacity ${isSuspended ? "border-l-red-400 opacity-60" : isPending ? "border-l-amber-400" : "border-l-blue-400"}`}>
+              <Card key={user.id} className={`border-l-4 transition-opacity ${isSuspended ? "border-l-red-400 opacity-60" : isLocked ? "border-l-orange-400" : isPending ? "border-l-amber-400" : "border-l-blue-400"}`}>
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
@@ -440,9 +640,15 @@ export default function AppUserManager() {
                           <Edit className="w-4 h-4 mr-2" /> Modifier
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleResetPin(user)}>
-                          <Key className="w-4 h-4 mr-2" /> Réinitialiser le PIN
+                          <Key className="w-4 h-4 mr-2" /> Réinitialiser le mot de passe
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
+                        {isLocked && (
+                          <DropdownMenuItem onClick={() => handleUnlock(user)}>
+                            <Unlock className="w-4 h-4 mr-2 text-orange-600" />
+                            <span className="text-orange-600">Déverrouiller le compte</span>
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem onClick={() => handleToggleSuspend(user)}>
                           <Ban className="w-4 h-4 mr-2" />
                           {isSuspended ? "Réactiver le compte" : "Suspendre le compte"}
@@ -462,7 +668,12 @@ export default function AppUserManager() {
                     <Badge variant="outline" className="text-xs">{role?.label || user.role}</Badge>
                     {isPending && (
                       <Badge className="bg-amber-100 text-amber-700 text-xs">
-                        <Key className="w-3 h-3 mr-1" /> PIN à changer
+                        <Key className="w-3 h-3 mr-1" /> MDP provisoire
+                      </Badge>
+                    )}
+                    {isLocked && (
+                      <Badge className="bg-orange-100 text-orange-700 text-xs">
+                        <Lock className="w-3 h-3 mr-1" /> Verrouillé
                       </Badge>
                     )}
                   </div>

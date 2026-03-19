@@ -163,11 +163,24 @@ export default function Affectation() {
 
   const activeTeachers = teachers.filter(t => t.status === "active" || !t.status);
 
+  // Types disponibles selon les classes accessibles à l'utilisateur (déjà filtrées par l'API)
+  const availableTypes = useMemo(() => {
+    const levelSet = new Set(classes.map(c => c.level).filter(Boolean));
+    return ALL_TYPES.filter(type =>
+      (TYPE_LEVELS[type] || []).some(l => levelSet.has(l))
+    );
+  }, [classes]);
+
   // Build available filter options
   const availableLevels = useMemo(() => {
-    if (filterType === "all") return Object.values(TYPE_LEVELS).flat();
-    return TYPE_LEVELS[filterType] || [];
-  }, [filterType]);
+    if (filterType === "all") {
+      // Only levels present in accessible classes
+      return [...new Set(classes.map(c => c.level).filter(Boolean))];
+    }
+    return (TYPE_LEVELS[filterType] || []).filter(l =>
+      classes.some(c => c.level === l)
+    );
+  }, [filterType, classes]);
 
   const availableClasses = useMemo(() => {
     return classes.filter(c => {
@@ -286,7 +299,7 @@ export default function Affectation() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Tous les types</SelectItem>
-            {ALL_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+            {availableTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
           </SelectContent>
         </Select>
 
