@@ -88,6 +88,8 @@ import Import from './pages/Import';
 import OrgChart from './pages/OrgChart';
 import AICenter from './pages/AICenter';
 import Tickets from './pages/Tickets';
+import Cantine from './pages/Cantine';
+import AbsencesEnseignants from './pages/AbsencesEnseignants';
 import __Layout from './Layout.jsx';
 
 
@@ -133,6 +135,8 @@ export const PAGES = {
     "OrgChart": OrgChart,
     "AICenter": AICenter,
     "Tickets": Tickets,
+    "Cantine": Cantine,
+    "AbsencesEnseignants": AbsencesEnseignants,
 }
 
 export const pagesConfig = {

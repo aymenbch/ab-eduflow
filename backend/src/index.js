@@ -18,10 +18,30 @@ async function runMigrations() {
     `ALTER TABLE Promotion ADD COLUMN decided_by TEXT`,
     `ALTER TABLE Promotion ADD COLUMN notes TEXT`,
     `ALTER TABLE SchoolYear ADD COLUMN passing_grade REAL DEFAULT 10`,
+    `ALTER TABLE AppUser ADD COLUMN two_fa_secret TEXT`,
+    `ALTER TABLE AppUser ADD COLUMN two_fa_enabled INTEGER DEFAULT 0`,
+    `ALTER TABLE AppUser ADD COLUMN admin_pattern_hash TEXT`,
+    `ALTER TABLE AppUser ADD COLUMN admin_pin_hash TEXT`,
   ];
   for (const sql of cols) {
     try { await prisma.$executeRawUnsafe(sql); } catch {} // ignore "duplicate column" errors
   }
+
+  // ── Table TwoFAPolicy (politique 2FA par rôle) ──────────────────────────
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS TwoFAPolicy (
+      role      TEXT PRIMARY KEY,
+      mandatory INTEGER DEFAULT 0
+    )
+  `).catch(() => {});
+
+  // ── Table AppSettings (paramètres globaux de l'application) ─────────────
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS AppSettings (
+      key   TEXT PRIMARY KEY,
+      value TEXT
+    )
+  `).catch(() => {});
 
   // ── Index de performance ─────────────────────────────────────────────────
   const indexes = [
@@ -57,6 +77,8 @@ const importRoutes = require('./routes/import');
 const aiRoutes = require('./routes/ai');
 const ticketRoutes = require('./routes/tickets');
 const notificationRoutes = require('./routes/notifications');
+const cantineRoutes = require('./routes/cantine');
+const absenceRoutes = require('./routes/absences');
 const { loadUser, requireAuth } = require('./authUtils');
 
 const app = express();
@@ -124,7 +146,7 @@ const upload = multer({ storage, fileFilter, limits: { fileSize: 50 * 1024 * 102
 
 app.post('/api/upload', loadUser, requireAuth, upload.single('file'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
-  const fileUrl = `http://localhost:${PORT}/uploads/${req.file.filename}`;
+  const fileUrl = `/uploads/${req.file.filename}`;
   res.json({ file_url: fileUrl, filename: req.file.filename, originalname: req.file.originalname });
 });
 
@@ -137,6 +159,8 @@ app.use('/api/import', importRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/tickets', ticketRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/cantine', cantineRoutes);
+app.use('/api/absences', absenceRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));

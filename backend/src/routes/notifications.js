@@ -7,10 +7,11 @@ const { getPrisma } = require('../db');
 
 const router = Router();
 
-// ── Auto-create tables ────────────────────────────────────────────────────────
+// ── Auto-create & migrate tables ──────────────────────────────────────────────
 async function ensureTables() {
   const prisma = getPrisma();
 
+  // NotifConfig — inchangé
   await prisma.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS NotifConfig (
       id           TEXT PRIMARY KEY,
@@ -21,19 +22,40 @@ async function ensureTables() {
       updated_date TEXT NOT NULL
     )`);
 
+  // NotifRule — avec scope + custom + priority, sans UNIQUE sur event_type
   await prisma.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS NotifRule (
-      id                     TEXT PRIMARY KEY,
-      event_type             TEXT NOT NULL UNIQUE,
-      label                  TEXT NOT NULL,
-      email_enabled          INTEGER NOT NULL DEFAULT 0,
-      sms_enabled            INTEGER NOT NULL DEFAULT 0,
-      email_subject_tpl      TEXT NOT NULL DEFAULT '',
-      email_body_tpl         TEXT NOT NULL DEFAULT '',
-      sms_tpl                TEXT NOT NULL DEFAULT '',
-      updated_date           TEXT NOT NULL
+      id                TEXT PRIMARY KEY,
+      event_type        TEXT NOT NULL,
+      label             TEXT NOT NULL,
+      email_enabled     INTEGER NOT NULL DEFAULT 0,
+      sms_enabled       INTEGER NOT NULL DEFAULT 0,
+      email_subject_tpl TEXT NOT NULL DEFAULT '',
+      email_body_tpl    TEXT NOT NULL DEFAULT '',
+      sms_tpl           TEXT NOT NULL DEFAULT '',
+      scope_type        TEXT NOT NULL DEFAULT 'general',
+      scope_value       TEXT,
+      is_custom         INTEGER NOT NULL DEFAULT 0,
+      priority          INTEGER NOT NULL DEFAULT 0,
+      updated_date      TEXT NOT NULL
     )`);
 
+  // Migration : ajouter les nouvelles colonnes si elles n'existent pas
+  const cols = await prisma.$queryRawUnsafe(`PRAGMA table_info(NotifRule)`);
+  const colNames = cols.map(c => c.name);
+  const migrations = [
+    { col: 'scope_type',  sql: `ALTER TABLE NotifRule ADD COLUMN scope_type TEXT NOT NULL DEFAULT 'general'` },
+    { col: 'scope_value', sql: `ALTER TABLE NotifRule ADD COLUMN scope_value TEXT` },
+    { col: 'is_custom',   sql: `ALTER TABLE NotifRule ADD COLUMN is_custom INTEGER NOT NULL DEFAULT 0` },
+    { col: 'priority',    sql: `ALTER TABLE NotifRule ADD COLUMN priority INTEGER NOT NULL DEFAULT 0` },
+  ];
+  for (const m of migrations) {
+    if (!colNames.includes(m.col)) {
+      try { await prisma.$executeRawUnsafe(m.sql); } catch {}
+    }
+  }
+
+  // NotifLog
   await prisma.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS NotifLog (
       id                TEXT PRIMARY KEY,
@@ -48,73 +70,59 @@ async function ensureTables() {
       sent_date         TEXT NOT NULL
     )`);
 
-  // Seed default rules if empty
+  // ── Seed default rules if empty ───────────────────────────────────────────
   const rows = await prisma.$queryRawUnsafe(`SELECT count(*) as n FROM NotifRule`);
   if (rows[0].n === 0) {
     const now = new Date().toISOString();
     const defaults = [
-      {
-        id: 'rule_absence', event_type: 'absence', label: 'Absence élève',
+      { id: 'rule_absence',  event_type: 'absence',         label: 'Absence élève',
         email_subject_tpl: 'Absence de {{student_name}} – {{date}}',
-        email_body_tpl: `Bonjour {{parent_name}},\n\nNous vous informons que votre enfant {{student_name}} a été marqué(e) {{status}} le {{date}} en classe {{class_name}}.\n\nCordialement,\nL'administration`,
-        sms_tpl: `Bonjour {{parent_name}}, votre enfant {{student_name}} est {{status}} aujourd'hui ({{date}}) - {{class_name}}.`,
-      },
-      {
-        id: 'rule_sanction', event_type: 'sanction', label: 'Sanction disciplinaire',
+        email_body_tpl: `Bonjour {{parent_name}},\n\nVotre enfant {{student_name}} a été marqué(e) {{status}} le {{date}} en classe {{class_name}}.\n\nCordialement,\nL'administration`,
+        sms_tpl: `Bonjour {{parent_name}}, {{student_name}} est {{status}} aujourd'hui ({{date}}) - {{class_name}}.` },
+      { id: 'rule_sanction', event_type: 'sanction',        label: 'Sanction disciplinaire',
         email_subject_tpl: 'Sanction disciplinaire – {{student_name}}',
-        email_body_tpl: `Bonjour {{parent_name}},\n\nUne sanction de type « {{sanction_type}} » a été prononcée pour votre enfant {{student_name}}.\nMotif : {{reason}}\nDate : {{date}}\n\nCordialement,\nL'administration`,
-        sms_tpl: `Sanction pour {{student_name}} : {{sanction_type}}. Motif: {{reason}}. Contactez l'école pour plus d'infos.`,
-      },
-      {
-        id: 'rule_payment', event_type: 'payment_overdue', label: 'Retard de paiement',
+        email_body_tpl: `Bonjour {{parent_name}},\n\nUne sanction « {{sanction_type}} » a été prononcée pour {{student_name}}.\nMotif : {{reason}}\nDate : {{date}}\n\nCordialement`,
+        sms_tpl: `Sanction pour {{student_name}} : {{sanction_type}}. Motif: {{reason}}.` },
+      { id: 'rule_payment',  event_type: 'payment_overdue', label: 'Retard de paiement',
         email_subject_tpl: 'Rappel de paiement – {{label}}',
-        email_body_tpl: `Bonjour {{parent_name}},\n\nNous vous rappelons qu'un paiement de {{amount}} DZD pour « {{label}} » concernant {{student_name}} est en retard depuis le {{due_date}}.\n\nMerci de vous rapprocher de l'administration.\n\nCordialement`,
-        sms_tpl: `Rappel: paiement de {{amount}} DZD ({{label}}) pour {{student_name}} est en retard. Contactez l'administration.`,
-      },
-      {
-        id: 'rule_bulletin', event_type: 'bulletin', label: 'Bulletin disponible',
-        email_subject_tpl: 'Bulletin scolaire disponible – {{student_name}} – {{period}}',
-        email_body_tpl: `Bonjour {{parent_name}},\n\nLe bulletin scolaire de {{student_name}} pour la période {{period}} est disponible.\nMoyenne générale : {{average}}/20\n\nVeuillez vous connecter à l'application ou contacter l'établissement.\n\nCordialement`,
-        sms_tpl: `Bulletin de {{student_name}} ({{period}}) disponible. Moyenne: {{average}}/20. Connectez-vous à l'application.`,
-      },
-      {
-        id: 'rule_note', event_type: 'note', label: 'Résultat d\'examen',
+        email_body_tpl: `Bonjour {{parent_name}},\n\nUn paiement de {{amount}} DZD ({{label}}) pour {{student_name}} est en retard depuis le {{due_date}}.\n\nMerci de contacter l'administration.\n\nCordialement`,
+        sms_tpl: `Rappel: {{amount}} DZD ({{label}}) pour {{student_name}} en retard. Contactez l'administration.` },
+      { id: 'rule_bulletin', event_type: 'bulletin',        label: 'Bulletin disponible',
+        email_subject_tpl: 'Bulletin scolaire – {{student_name}} – {{period}}',
+        email_body_tpl: `Bonjour {{parent_name}},\n\nLe bulletin de {{student_name}} pour {{period}} est disponible.\nMoyenne générale : {{average}}/20\n\nCordialement`,
+        sms_tpl: `Bulletin de {{student_name}} ({{period}}) dispo. Moy: {{average}}/20.` },
+      { id: 'rule_note',     event_type: 'note',            label: "Résultat d'examen",
         email_subject_tpl: 'Note publiée – {{subject}} – {{student_name}}',
-        email_body_tpl: `Bonjour {{parent_name}},\n\nLa note de {{student_name}} pour l'examen « {{exam_name}} » en {{subject}} vient d'être publiée.\nNote obtenue : {{score}}/{{max_score}}\n\nCordialement`,
-        sms_tpl: `Note de {{student_name}} en {{subject}}: {{score}}/{{max_score}} ({{exam_name}}).`,
-      },
-      {
-        id: 'rule_event', event_type: 'event', label: 'Événement scolaire',
+        email_body_tpl: `Bonjour {{parent_name}},\n\nLa note de {{student_name}} en {{subject}} ({{exam_name}}) : {{score}}/{{max_score}}\n\nCordialement`,
+        sms_tpl: `Note de {{student_name}} en {{subject}}: {{score}}/{{max_score}} ({{exam_name}}).` },
+      { id: 'rule_event',    event_type: 'event',           label: 'Événement scolaire',
         email_subject_tpl: 'Événement : {{event_title}}',
-        email_body_tpl: `Bonjour {{parent_name}},\n\nNous vous informons d'un événement : {{event_title}}\nDate : {{event_date}}\nDescription : {{event_description}}\n\nCordialement`,
-        sms_tpl: `Événement scolaire: {{event_title}} le {{event_date}}.`,
-      },
+        email_body_tpl: `Bonjour {{parent_name}},\n\nÉvénement : {{event_title}}\nDate : {{event_date}}\n{{event_description}}\n\nCordialement`,
+        sms_tpl: `Événement: {{event_title}} le {{event_date}}.` },
     ];
     for (const r of defaults) {
       await prisma.$executeRawUnsafe(
-        `INSERT OR IGNORE INTO NotifRule (id, event_type, label, email_enabled, sms_enabled, email_subject_tpl, email_body_tpl, sms_tpl, updated_date)
-         VALUES (?,?,?,0,0,?,?,?,?)`,
-        r.id, r.event_type, r.label,
-        r.email_subject_tpl, r.email_body_tpl, r.sms_tpl, now
+        `INSERT OR IGNORE INTO NotifRule
+           (id, event_type, label, email_enabled, sms_enabled, email_subject_tpl, email_body_tpl, sms_tpl, scope_type, scope_value, is_custom, priority, updated_date)
+         VALUES (?,?,?,0,0,?,?,?,'general',NULL,0,0,?)`,
+        r.id, r.event_type, r.label, r.email_subject_tpl, r.email_body_tpl, r.sms_tpl, now
       );
     }
   }
 
-  // Seed default configs if empty
+  // Seed default configs
   const cfgRows = await prisma.$queryRawUnsafe(`SELECT count(*) as n FROM NotifConfig`);
   if (cfgRows[0].n === 0) {
     const now = new Date().toISOString();
     await prisma.$executeRawUnsafe(
       `INSERT OR IGNORE INTO NotifConfig (id, channel, enabled, provider, config, updated_date) VALUES (?,?,0,?,?,?)`,
       'cfg_email', 'email', 'smtp',
-      JSON.stringify({ host: '', port: 587, secure: false, user: '', pass: '', from_name: 'EduGest', from_email: '' }),
-      now
+      JSON.stringify({ host:'', port:587, secure:false, user:'', pass:'', from_name:'EduGest', from_email:'' }), now
     );
     await prisma.$executeRawUnsafe(
       `INSERT OR IGNORE INTO NotifConfig (id, channel, enabled, provider, config, updated_date) VALUES (?,?,0,?,?,?)`,
       'cfg_sms', 'sms', 'twilio',
-      JSON.stringify({ account_sid: '', auth_token: '', from_number: '', api_url: '', api_key: '', sender_id: '' }),
-      now
+      JSON.stringify({ account_sid:'', auth_token:'', from_number:'', api_url:'', api_key:'', sender_id:'' }), now
     );
   }
 }
@@ -129,95 +137,62 @@ function renderTemplate(tpl, vars) {
 async function sendEmail(config, to, subject, body) {
   try {
     const nodemailer = require('nodemailer');
-    let transporterConfig;
-    if (config.provider === 'gmail') {
-      transporterConfig = {
-        service: 'gmail',
-        auth: { user: config.user, pass: config.pass },
-      };
-    } else {
-      transporterConfig = {
-        host: config.host,
-        port: parseInt(config.port) || 587,
-        secure: !!config.secure,
-        auth: { user: config.user, pass: config.pass },
-      };
-    }
+    const transporterConfig = config.provider === 'gmail'
+      ? { service: 'gmail', auth: { user: config.user, pass: config.pass } }
+      : { host: config.host, port: parseInt(config.port) || 587, secure: !!config.secure, auth: { user: config.user, pass: config.pass } };
     const transporter = nodemailer.createTransport(transporterConfig);
     await transporter.sendMail({
       from: `"${config.from_name || 'EduGest'}" <${config.from_email || config.user}>`,
-      to,
-      subject,
-      text: body,
-      html: body.replace(/\n/g, '<br>'),
+      to, subject, text: body, html: body.replace(/\n/g, '<br>'),
     });
     return { success: true };
-  } catch (err) {
-    return { success: false, error: err.message };
-  }
+  } catch (err) { return { success: false, error: err.message }; }
 }
 
 async function sendSMS(config, to, message) {
   try {
     if (config.provider === 'twilio') {
-      const url = `https://api.twilio.com/2010-04-01/Accounts/${config.account_sid}/Messages.json`;
-      const res = await fetch(url, {
+      const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${config.account_sid}/Messages.json`, {
         method: 'POST',
-        headers: {
-          'Authorization': 'Basic ' + Buffer.from(`${config.account_sid}:${config.auth_token}`).toString('base64'),
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
+        headers: { 'Authorization': 'Basic ' + Buffer.from(`${config.account_sid}:${config.auth_token}`).toString('base64'), 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({ To: to, From: config.from_number, Body: message }),
       });
       const data = await res.json();
-      if (!res.ok) return { success: false, error: data.message };
-      return { success: true };
+      return res.ok ? { success: true } : { success: false, error: data.message };
     } else if (config.provider === 'infobip') {
       const res = await fetch(`https://api.infobip.com/sms/2/text/advanced`, {
         method: 'POST',
-        headers: {
-          'Authorization': `App ${config.api_key}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          messages: [{ from: config.sender_id, destinations: [{ to }], text: message }]
-        }),
+        headers: { 'Authorization': `App ${config.api_key}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: [{ from: config.sender_id, destinations: [{ to }], text: message }] }),
       });
       const data = await res.json();
-      if (!res.ok) return { success: false, error: JSON.stringify(data) };
-      return { success: true };
+      return res.ok ? { success: true } : { success: false, error: JSON.stringify(data) };
     } else if (config.provider === 'custom') {
-      // Generic HTTP POST with {to, message} body
       const res = await fetch(config.api_url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${config.api_key}` },
         body: JSON.stringify({ to, from: config.sender_id, message }),
       });
-      if (!res.ok) return { success: false, error: `HTTP ${res.status}` };
-      return { success: true };
+      return res.ok ? { success: true } : { success: false, error: `HTTP ${res.status}` };
     }
     return { success: false, error: 'Fournisseur SMS non reconnu' };
-  } catch (err) {
-    return { success: false, error: err.message };
-  }
+  } catch (err) { return { success: false, error: err.message }; }
 }
 
 // ── Routes ────────────────────────────────────────────────────────────────────
 
-// GET /api/notifications/settings — get email & SMS config
+// GET /api/notifications/settings
 router.get('/settings', async (req, res) => {
   try {
     const prisma = getPrisma();
     const rows = await prisma.$queryRawUnsafe(`SELECT * FROM NotifConfig`);
     const settings = {};
-    for (const r of rows) {
-      settings[r.channel] = { ...r, config: JSON.parse(r.config || '{}') };
-    }
+    for (const r of rows) settings[r.channel] = { ...r, config: JSON.parse(r.config || '{}') };
     res.json(settings);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// PUT /api/notifications/settings/:channel — update channel config
+// PUT /api/notifications/settings/:channel
 router.put('/settings/:channel', async (req, res) => {
   try {
     const prisma = getPrisma();
@@ -233,12 +208,42 @@ router.put('/settings/:channel', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// GET /api/notifications/rules — get all notification rules
+// GET /api/notifications/rules — all rules ordered by scope then priority
 router.get('/rules', async (req, res) => {
   try {
     const prisma = getPrisma();
-    const rows = await prisma.$queryRawUnsafe(`SELECT * FROM NotifRule ORDER BY event_type`);
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT * FROM NotifRule ORDER BY is_custom ASC, scope_type ASC, priority DESC, label ASC`
+    );
     res.json(rows);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// POST /api/notifications/rules — create a new rule
+router.post('/rules', async (req, res) => {
+  try {
+    const prisma = getPrisma();
+    const {
+      event_type, label, email_enabled = 0, sms_enabled = 0,
+      email_subject_tpl = '', email_body_tpl = '', sms_tpl = '',
+      scope_type = 'general', scope_value = null, priority = 0,
+    } = req.body;
+    if (!event_type || !label) return res.status(400).json({ error: 'event_type and label are required' });
+    const id = require('crypto').randomUUID();
+    const now = new Date().toISOString();
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO NotifRule
+         (id, event_type, label, email_enabled, sms_enabled, email_subject_tpl, email_body_tpl, sms_tpl, scope_type, scope_value, is_custom, priority, updated_date)
+       VALUES (?,?,?,?,?,?,?,?,?,?,1,?,?)`,
+      id, event_type, label,
+      email_enabled ? 1 : 0, sms_enabled ? 1 : 0,
+      email_subject_tpl, email_body_tpl, sms_tpl,
+      scope_type,
+      scope_value ? JSON.stringify(scope_value) : null,
+      priority || 0, now
+    );
+    const [row] = await prisma.$queryRawUnsafe(`SELECT * FROM NotifRule WHERE id=?`, id);
+    res.status(201).json(row);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -247,76 +252,94 @@ router.put('/rules/:id', async (req, res) => {
   try {
     const prisma = getPrisma();
     const { id } = req.params;
-    const { email_enabled, sms_enabled, email_subject_tpl, email_body_tpl, sms_tpl } = req.body;
+    const {
+      email_enabled, sms_enabled, email_subject_tpl, email_body_tpl, sms_tpl,
+      label, scope_type, scope_value, priority,
+    } = req.body;
     const now = new Date().toISOString();
     await prisma.$executeRawUnsafe(
-      `UPDATE NotifRule SET email_enabled=?, sms_enabled=?, email_subject_tpl=?, email_body_tpl=?, sms_tpl=?, updated_date=? WHERE id=?`,
+      `UPDATE NotifRule SET
+         email_enabled=?, sms_enabled=?,
+         email_subject_tpl=?, email_body_tpl=?, sms_tpl=?,
+         label=?, scope_type=?, scope_value=?, priority=?,
+         updated_date=?
+       WHERE id=?`,
       email_enabled ? 1 : 0, sms_enabled ? 1 : 0,
-      email_subject_tpl || '', email_body_tpl || '', sms_tpl || '', now, id
+      email_subject_tpl || '', email_body_tpl || '', sms_tpl || '',
+      label || '', scope_type || 'general',
+      scope_value ? (typeof scope_value === 'string' ? scope_value : JSON.stringify(scope_value)) : null,
+      priority || 0, now, id
     );
     const [row] = await prisma.$queryRawUnsafe(`SELECT * FROM NotifRule WHERE id=?`, id);
     res.json(row);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// POST /api/notifications/send — send notification(s)
+// DELETE /api/notifications/rules/:id — delete a custom rule only
+router.delete('/rules/:id', async (req, res) => {
+  try {
+    const prisma = getPrisma();
+    const [rule] = await prisma.$queryRawUnsafe(`SELECT * FROM NotifRule WHERE id=?`, req.params.id);
+    if (!rule) return res.status(404).json({ error: 'Règle introuvable' });
+    if (!rule.is_custom) return res.status(403).json({ error: 'Les règles système ne peuvent pas être supprimées' });
+    await prisma.$executeRawUnsafe(`DELETE FROM NotifRule WHERE id=?`, req.params.id);
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// POST /api/notifications/send
 router.post('/send', async (req, res) => {
   try {
     const prisma = getPrisma();
-    const { event_type, recipients, variables } = req.body;
-    // recipients: [{name, email, phone, student_name}]
-    // variables: {student_name, date, ...}
+    const { event_type, recipients, variables, rule_id } = req.body;
+    if (!event_type || !recipients?.length) return res.status(400).json({ error: 'event_type and recipients are required' });
 
-    if (!event_type || !recipients?.length) {
-      return res.status(400).json({ error: 'event_type and recipients are required' });
+    // Find applicable rules: specific rule_id OR all rules for this event_type
+    let rules;
+    if (rule_id) {
+      rules = await prisma.$queryRawUnsafe(`SELECT * FROM NotifRule WHERE id=?`, rule_id);
+    } else {
+      rules = await prisma.$queryRawUnsafe(`SELECT * FROM NotifRule WHERE event_type=?`, event_type);
     }
-
-    const [rule] = await prisma.$queryRawUnsafe(`SELECT * FROM NotifRule WHERE event_type=?`, event_type);
-    if (!rule) return res.status(404).json({ error: 'Règle de notification introuvable' });
+    if (!rules?.length) return res.status(404).json({ error: 'Aucune règle de notification trouvée' });
 
     const cfgRows = await prisma.$queryRawUnsafe(`SELECT * FROM NotifConfig`);
     const cfgMap = {};
     for (const c of cfgRows) cfgMap[c.channel] = { ...c, config: JSON.parse(c.config || '{}') };
 
     const results = [];
-    for (const recip of recipients) {
-      const vars = { ...variables, parent_name: recip.name, ...recip.extra_vars };
+    for (const rule of rules) {
+      for (const recip of recipients) {
+        const vars = { ...variables, parent_name: recip.name, ...recip.extra_vars };
 
-      // ─ Email ─
-      if (rule.email_enabled && cfgMap.email?.enabled && recip.email) {
-        const subject = renderTemplate(rule.email_subject_tpl, vars);
-        const body    = renderTemplate(rule.email_body_tpl,    vars);
-        const result  = await sendEmail(cfgMap.email.config, recip.email, subject, body);
-        const logId   = require('crypto').randomUUID();
-        await prisma.$executeRawUnsafe(
-          `INSERT INTO NotifLog (id, channel, event_type, recipient_name, recipient_contact, student_name, message_preview, status, error_msg, sent_date)
-           VALUES (?,?,?,?,?,?,?,?,?,?)`,
-          logId, 'email', event_type, recip.name, recip.email, recip.student_name || '',
-          subject, result.success ? 'sent' : 'failed', result.error || null, new Date().toISOString()
-        );
-        results.push({ channel: 'email', recipient: recip.email, ...result });
-      }
+        if (rule.email_enabled && cfgMap.email?.enabled && recip.email) {
+          const subject = renderTemplate(rule.email_subject_tpl, vars);
+          const body    = renderTemplate(rule.email_body_tpl, vars);
+          const result  = await sendEmail(cfgMap.email.config, recip.email, subject, body);
+          const logId   = require('crypto').randomUUID();
+          await prisma.$executeRawUnsafe(
+            `INSERT INTO NotifLog (id, channel, event_type, recipient_name, recipient_contact, student_name, message_preview, status, error_msg, sent_date) VALUES (?,?,?,?,?,?,?,?,?,?)`,
+            logId, 'email', event_type, recip.name, recip.email, recip.student_name || '',
+            subject, result.success ? 'sent' : 'failed', result.error || null, new Date().toISOString()
+          );
+          results.push({ channel: 'email', recipient: recip.email, rule_id: rule.id, ...result });
+        }
 
-      // ─ SMS ─
-      if (rule.sms_enabled && cfgMap.sms?.enabled && recip.phone) {
-        const message = renderTemplate(rule.sms_tpl, vars);
-        const result  = await sendSMS(cfgMap.sms.config, recip.phone, message);
-        const logId   = require('crypto').randomUUID();
-        await prisma.$executeRawUnsafe(
-          `INSERT INTO NotifLog (id, channel, event_type, recipient_name, recipient_contact, student_name, message_preview, status, error_msg, sent_date)
-           VALUES (?,?,?,?,?,?,?,?,?,?)`,
-          logId, 'sms', event_type, recip.name, recip.phone, recip.student_name || '',
-          message.slice(0, 100), result.success ? 'sent' : 'failed', result.error || null, new Date().toISOString()
-        );
-        results.push({ channel: 'sms', recipient: recip.phone, ...result });
-      }
-
-      // Simulation mode: if neither channel is enabled but called manually
-      if (!rule.email_enabled && !rule.sms_enabled) {
-        results.push({ channel: 'none', recipient: recip.name, success: false, error: 'Aucun canal activé pour cet événement' });
+        if (rule.sms_enabled && cfgMap.sms?.enabled && recip.phone) {
+          const message = renderTemplate(rule.sms_tpl, vars);
+          const result  = await sendSMS(cfgMap.sms.config, recip.phone, message);
+          const logId   = require('crypto').randomUUID();
+          await prisma.$executeRawUnsafe(
+            `INSERT INTO NotifLog (id, channel, event_type, recipient_name, recipient_contact, student_name, message_preview, status, error_msg, sent_date) VALUES (?,?,?,?,?,?,?,?,?,?)`,
+            logId, 'sms', event_type, recip.name, recip.phone, recip.student_name || '',
+            message.slice(0, 100), result.success ? 'sent' : 'failed', result.error || null, new Date().toISOString()
+          );
+          results.push({ channel: 'sms', recipient: recip.phone, rule_id: rule.id, ...result });
+        }
       }
     }
 
+    if (!results.length) results.push({ channel: 'none', success: false, error: 'Aucun canal actif' });
     res.json({ sent: results.filter(r => r.success).length, failed: results.filter(r => !r.success).length, results });
   } catch (err) {
     console.error('[notifications] send error:', err);
@@ -324,37 +347,29 @@ router.post('/send', async (req, res) => {
   }
 });
 
-// POST /api/notifications/test — send a test notification
+// POST /api/notifications/test
 router.post('/test', async (req, res) => {
   try {
     const { channel, to } = req.body;
     if (!channel || !to) return res.status(400).json({ error: 'channel and to are required' });
-
     const prisma = getPrisma();
     const [cfg] = await prisma.$queryRawUnsafe(`SELECT * FROM NotifConfig WHERE channel=?`, channel);
     if (!cfg) return res.status(404).json({ error: 'Configuration introuvable' });
-
     const config = JSON.parse(cfg.config || '{}');
-    let result;
-    if (channel === 'email') {
-      result = await sendEmail(config, to, 'Test EduGest – Notification Email', 'Ceci est un message de test envoyé depuis EduGest.\n\nSi vous recevez cet email, la configuration est correcte.');
-    } else {
-      result = await sendSMS(config, to, 'EduGest: Test SMS. Configuration correcte.');
-    }
-
-    // Log it
+    const result = channel === 'email'
+      ? await sendEmail(config, to, 'Test EduGest – Notification Email', 'Ceci est un message de test envoyé depuis EduGest.\n\nSi vous recevez cet email, la configuration est correcte.')
+      : await sendSMS(config, to, 'EduGest: Test SMS. Configuration correcte.');
     const logId = require('crypto').randomUUID();
     await prisma.$executeRawUnsafe(
       `INSERT INTO NotifLog (id, channel, event_type, recipient_name, recipient_contact, student_name, message_preview, status, error_msg, sent_date) VALUES (?,?,?,?,?,?,?,?,?,?)`,
-      logId, channel, 'test', 'Test', to, '',
-      `Test ${channel}`, result.success ? 'sent' : 'failed', result.error || null, new Date().toISOString()
+      logId, channel, 'test', 'Test', to, '', `Test ${channel}`,
+      result.success ? 'sent' : 'failed', result.error || null, new Date().toISOString()
     );
-
     res.json(result);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// GET /api/notifications/log — get notification history
+// GET /api/notifications/log
 router.get('/log', async (req, res) => {
   try {
     const prisma = getPrisma();
@@ -363,7 +378,7 @@ router.get('/log', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// DELETE /api/notifications/log — clear log
+// DELETE /api/notifications/log
 router.delete('/log', async (req, res) => {
   try {
     const prisma = getPrisma();

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import PageHeader from "@/components/ui/PageHeader";
@@ -49,6 +49,7 @@ import { fr } from "date-fns/locale";
 import { Link } from "react-router-dom";
 import { useTeacherProfile } from "@/components/teachers/useTeacherProfile";
 import { getSession } from "@/components/auth/appAuth";
+import { useCurrentMember } from "@/components/hooks/useCurrentMember";
 import { createPageUrl } from "@/utils";
 
 const GRADING_SCALES = {
@@ -100,7 +101,8 @@ export default function Exams() {
   });
 
   const queryClient = useQueryClient();
-  const { mySubjectIds, isTeacherRole, teacherProfile } = useTeacherProfile();
+  const { mySubjectIds, isTeacherRole } = useTeacherProfile();
+  const { myTeacherId, isTeacher } = useCurrentMember();
   const session = getSession();
   const isAdmin = ["admin_systeme", "directeur_general", "directeur_primaire", "directeur_college", "directeur_lycee"].includes(session?.role);
 
@@ -127,6 +129,20 @@ export default function Exams() {
     queryKey: ["teachers"],
     queryFn: () => base44.entities.Teacher.list(),
   });
+
+  // Schedules de l'enseignant (pour filtrer les classes)
+  const { data: teacherSchedules = [] } = useQuery({
+    queryKey: ["schedules_teacher", myTeacherId],
+    queryFn: () => base44.entities.Schedule.filter({ teacher_id: myTeacherId }),
+    enabled: isTeacher && !!myTeacherId,
+  });
+
+  // Classes visibles : pour un enseignant, uniquement celles dans son emploi du temps
+  const visibleClasses = useMemo(() => {
+    if (!isTeacher || teacherSchedules.length === 0) return classes;
+    const classIds = new Set(teacherSchedules.map(s => s.class_id));
+    return classes.filter(c => classIds.has(c.id));
+  }, [classes, isTeacherRole, teacherSchedules]);
 
   // Année scolaire active + ses périodes
   const { data: schoolYears = [] } = useQuery({
@@ -505,7 +521,7 @@ export default function Exams() {
                     <SelectValue placeholder="Sélectionner" />
                   </SelectTrigger>
                   <SelectContent>
-                    {classes.map((c) => (
+                    {visibleClasses.map((c) => (
                       <SelectItem key={c.id} value={c.id}>
                         {c.name}
                       </SelectItem>

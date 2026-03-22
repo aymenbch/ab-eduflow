@@ -202,6 +202,7 @@ model ScheduleEvent {
   subject_id       String?
   teacher_id       String?
   event_date       String?
+  day_of_week      Int?
   start_time       String?
   end_time         String?
   event_type       String?
@@ -209,7 +210,9 @@ model ScheduleEvent {
   description      String?
   replacement_date String?
   replacement_time String?
+  replacement_room String?
   declared_by      String?
+  notified_parents Boolean  @default(false)
   title            String?
   created_date     DateTime @default(now())
 }

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import PageHeader from "@/components/ui/PageHeader";
@@ -63,7 +63,7 @@ export default function Homework() {
 
   const queryClient = useQueryClient();
   const { mySubjectIds, isTeacherRole } = useTeacherProfile();
-  const { isStudent, myStudent } = useCurrentMember();
+  const { isStudent, myStudent, isTeacher, myTeacherId } = useCurrentMember();
 
   const { data: homeworkAll = [], isLoading } = useQuery({
     queryKey: ["homework"],
@@ -88,6 +88,19 @@ export default function Homework() {
 
   const classMap = Object.fromEntries(classes.map((c) => [c.id, c]));
   const subjectMap = Object.fromEntries(subjects.map((s) => [s.id, s]));
+
+  // Schedules de l'enseignant (pour filtrer les classes dans le formulaire)
+  const { data: teacherSchedules = [] } = useQuery({
+    queryKey: ["schedules_teacher", myTeacherId],
+    queryFn: () => base44.entities.Schedule.filter({ teacher_id: myTeacherId }),
+    enabled: isTeacher && !!myTeacherId,
+  });
+
+  const visibleClasses = useMemo(() => {
+    if (!isTeacher || teacherSchedules.length === 0) return classes;
+    const classIds = new Set(teacherSchedules.map(s => s.class_id));
+    return classes.filter(c => classIds.has(c.id));
+  }, [classes, isTeacherRole, teacherSchedules]);
 
   // Filtrer les matières disponibles pour l'enseignant connecté
   const availableSubjects = isTeacherRole
@@ -359,7 +372,7 @@ export default function Homework() {
                     <SelectValue placeholder="Sélectionner" />
                   </SelectTrigger>
                   <SelectContent>
-                    {classes.map((c) => (
+                    {visibleClasses.map((c) => (
                       <SelectItem key={c.id} value={c.id}>
                         {c.name}
                       </SelectItem>

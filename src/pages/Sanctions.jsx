@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import PageHeader from "@/components/ui/PageHeader";
@@ -42,6 +42,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { useCurrentMember } from "@/components/hooks/useCurrentMember";
 
 const SANCTION_TYPES = {
   warning: { label: "Avertissement", color: "bg-yellow-100 text-yellow-800" },
@@ -71,6 +72,7 @@ export default function Sanctions() {
   });
 
   const queryClient = useQueryClient();
+  const { isTeacher, myTeacherId } = useCurrentMember();
 
   const { data: sanctions = [], isLoading } = useQuery({
     queryKey: ["sanctions"],
@@ -83,6 +85,19 @@ export default function Sanctions() {
   });
 
   const studentMap = Object.fromEntries(students.map((s) => [s.id, s]));
+
+  // Schedules de l'enseignant pour filtrer les élèves visibles
+  const { data: teacherSchedules = [] } = useQuery({
+    queryKey: ["schedules_teacher", myTeacherId],
+    queryFn: () => base44.entities.Schedule.filter({ teacher_id: myTeacherId }),
+    enabled: isTeacher && !!myTeacherId,
+  });
+
+  const visibleStudents = useMemo(() => {
+    if (!isTeacher || teacherSchedules.length === 0) return students;
+    const classIds = new Set(teacherSchedules.map(s => s.class_id));
+    return students.filter(s => classIds.has(s.class_id));
+  }, [students, isTeacher, teacherSchedules]);
 
   const handleNew = () => {
     setSelectedSanction(null);
@@ -309,7 +324,7 @@ export default function Sanctions() {
                   <SelectValue placeholder="Sélectionner un élève" />
                 </SelectTrigger>
                 <SelectContent>
-                  {students.map((s) => (
+                  {visibleStudents.map((s) => (
                     <SelectItem key={s.id} value={s.id}>
                       {s.first_name} {s.last_name}
                     </SelectItem>

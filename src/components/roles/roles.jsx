@@ -7,7 +7,7 @@ export const ROLES = {
     bgColor: "bg-red-100",
     icon: "🔐",
     description: "Gestion des utilisateurs, rôles et configuration de l'application",
-    pages: ["Dashboard", "Administration", "SchoolYearManager", "Rooms", "Visio", "Import", "OrgChart", "Tickets"],
+    pages: ["Dashboard", "Administration", "SchoolYearManager", "Rooms", "Visio", "Import", "OrgChart", "Tickets", "Cantine"],
   },
   directeur_general: {
     label: "Directeur Général",
@@ -16,7 +16,7 @@ export const ROLES = {
     bgColor: "bg-slate-100",
     icon: "👑",
     description: "Accès complet à tous les modules",
-    pages: ["Dashboard", "Students", "Teachers", "Classes", "Subjects", "Staff", "Schedule", "Rooms", "Exams", "Grades", "Moyennes", "Homework", "Resources", "Attendance", "Sanctions", "Messages", "Events", "Visio", "Finance", "Bulletins", "SchoolYearManager", "PassageDeClasse", "MobileSaisie", "Pilotage", "ProjectsScrum", "SocialNetwork", "Affectation", "AffectationEleves", "Import", "OrgChart", "Tickets"],
+    pages: ["Dashboard", "Students", "Teachers", "Classes", "Subjects", "Staff", "Schedule", "Rooms", "Exams", "Grades", "Moyennes", "Homework", "Resources", "Attendance", "Sanctions", "Messages", "Events", "Visio", "Finance", "Bulletins", "SchoolYearManager", "PassageDeClasse", "MobileSaisie", "Pilotage", "ProjectsScrum", "SocialNetwork", "Affectation", "AffectationEleves", "Import", "OrgChart", "Tickets", "Cantine", "AbsencesEnseignants"],
   },
   directeur_primaire: {
     label: "Directeur du Primaire",
@@ -25,7 +25,7 @@ export const ROLES = {
     bgColor: "bg-blue-100",
     icon: "🏫",
     description: "Gestion du cycle primaire",
-    pages: ["Dashboard", "Students", "Teachers", "Classes", "Subjects", "Schedule", "Rooms", "Exams", "Grades", "Moyennes", "Attendance", "Sanctions", "Messages", "Events", "Visio", "Finance", "Bulletins", "PassageDeClasse", "Pilotage", "ProjectsScrum", "SocialNetwork", "Affectation", "AffectationEleves", "Import", "OrgChart", "Tickets"],
+    pages: ["Dashboard", "Students", "Teachers", "Classes", "Subjects", "Schedule", "Rooms", "Exams", "Grades", "Moyennes", "Attendance", "Sanctions", "Messages", "Events", "Visio", "Finance", "Bulletins", "PassageDeClasse", "Pilotage", "ProjectsScrum", "SocialNetwork", "Affectation", "AffectationEleves", "Import", "OrgChart", "Tickets", "Cantine", "AbsencesEnseignants"],
   },
   directeur_college: {
     label: "Directeur du Collège",
@@ -34,7 +34,7 @@ export const ROLES = {
     bgColor: "bg-indigo-100",
     icon: "🎓",
     description: "Gestion du cycle collège",
-    pages: ["Dashboard", "Students", "Teachers", "Classes", "Subjects", "Schedule", "Rooms", "Exams", "Grades", "Moyennes", "Attendance", "Sanctions", "Messages", "Events", "Visio", "Finance", "Bulletins", "PassageDeClasse", "Pilotage", "ProjectsScrum", "SocialNetwork", "Import", "OrgChart", "Tickets"],
+    pages: ["Dashboard", "Students", "Teachers", "Classes", "Subjects", "Schedule", "Rooms", "Exams", "Grades", "Moyennes", "Attendance", "Sanctions", "Messages", "Events", "Visio", "Finance", "Bulletins", "PassageDeClasse", "Pilotage", "ProjectsScrum", "SocialNetwork", "Import", "OrgChart", "Tickets", "Cantine", "AbsencesEnseignants"],
   },
   directeur_lycee: {
     label: "Directeur du Lycée",
@@ -43,7 +43,7 @@ export const ROLES = {
     bgColor: "bg-violet-100",
     icon: "🏛️",
     description: "Gestion du cycle lycée",
-    pages: ["Dashboard", "Students", "Teachers", "Classes", "Subjects", "Schedule", "Rooms", "Exams", "Grades", "Moyennes", "Attendance", "Sanctions", "Messages", "Events", "Visio", "Finance", "Bulletins", "PassageDeClasse", "Pilotage", "ProjectsScrum", "SocialNetwork", "Affectation", "AffectationEleves", "Import", "OrgChart", "Tickets"],
+    pages: ["Dashboard", "Students", "Teachers", "Classes", "Subjects", "Schedule", "Rooms", "Exams", "Grades", "Moyennes", "Attendance", "Sanctions", "Messages", "Events", "Visio", "Finance", "Bulletins", "PassageDeClasse", "Pilotage", "ProjectsScrum", "SocialNetwork", "Affectation", "AffectationEleves", "Import", "OrgChart", "Tickets", "Cantine", "AbsencesEnseignants"],
   },
   cpe: {
     label: "CPE",
@@ -52,7 +52,7 @@ export const ROLES = {
     bgColor: "bg-orange-100",
     icon: "👮",
     description: "Vie scolaire, discipline et présences",
-    pages: ["Dashboard", "Students", "Classes", "Schedule", "Exams", "Grades", "Moyennes", "Attendance", "Sanctions", "Messages", "Events", "Visio", "Pilotage", "SocialNetwork", "Tickets"],
+    pages: ["Dashboard", "Students", "Classes", "Schedule", "Exams", "Grades", "Moyennes", "Attendance", "Sanctions", "Messages", "Events", "Visio", "Pilotage", "SocialNetwork", "Tickets", "Cantine", "AbsencesEnseignants"],
   },
   enseignant: {
     label: "Enseignant",
@@ -61,7 +61,7 @@ export const ROLES = {
     bgColor: "bg-green-100",
     icon: "📚",
     description: "Cours, notes, devoirs et ressources",
-    pages: ["Dashboard", "Students", "Classes", "Subjects", "Schedule", "Exams", "Grades", "Moyennes", "Homework", "Resources", "Attendance", "Sanctions", "Messages", "Visio", "MobileSaisie", "Pilotage", "SocialNetwork", "Tickets"],
+    pages: ["Dashboard", "Students", "Classes", "Subjects", "Schedule", "Exams", "Grades", "Moyennes", "Homework", "Resources", "Attendance", "Sanctions", "Messages", "Visio", "MobileSaisie", "Pilotage", "SocialNetwork", "Tickets", "Cantine", "AbsencesEnseignants"],
   },
   secretaire: {
     label: "Secrétaire",
@@ -70,7 +70,7 @@ export const ROLES = {
     bgColor: "bg-cyan-100",
     icon: "📋",
     description: "Inscriptions, dossiers et administratif",
-    pages: ["Dashboard", "Students", "Teachers", "Classes", "Subjects", "Staff", "Schedule", "Attendance", "Sanctions", "Messages", "Events", "Visio", "Tickets"],
+    pages: ["Dashboard", "Students", "Teachers", "Classes", "Subjects", "Staff", "Schedule", "Attendance", "Sanctions", "Messages", "Events", "Visio", "Tickets", "Cantine", "AbsencesEnseignants"],
   },
   comptable: {
     label: "Comptable",
@@ -88,7 +88,7 @@ export const ROLES = {
     bgColor: "bg-pink-100",
     icon: "🎒",
     description: "Mes cours, notes, devoirs et planning",
-    pages: ["Dashboard", "StudentDashboard", "Grades", "Schedule", "Homework", "Resources", "Messages", "Events", "Visio", "SocialNetwork"],
+    pages: ["Dashboard", "StudentDashboard", "Grades", "Schedule", "Homework", "Resources", "Messages", "Events", "Visio", "SocialNetwork", "Cantine"],
   },
   parent: {
     label: "Parent",
@@ -97,7 +97,7 @@ export const ROLES = {
     bgColor: "bg-amber-100",
     icon: "👨‍👩‍👧",
     description: "Suivi scolaire de mon enfant",
-    pages: ["Dashboard", "EspaceParent", "Grades", "Attendance", "Homework", "Sanctions", "Finance", "Messages", "Events", "Visio", "SocialNetwork", "Pilotage"],
+    pages: ["Dashboard", "EspaceParent", "Grades", "Attendance", "Homework", "Sanctions", "Finance", "Messages", "Events", "Visio", "SocialNetwork", "Pilotage", "Cantine"],
   },
 };
 
@@ -136,6 +136,8 @@ export const PAGE_LABELS = {
   Import: "Import de données",
   OrgChart: "Organigramme",
   Tickets: "Demandes Internes",
+  Cantine: "Cantine Scolaire",
+  AbsencesEnseignants: "Absences Enseignants",
 };
 
 // All pages grouped by category (for the permissions matrix UI)
@@ -174,6 +176,8 @@ export const ALL_PAGES_BY_CATEGORY = [
       { key: "Messages", label: "Messages" },
       { key: "Events", label: "Événements" },
       { key: "Visio", label: "Visioconférence" },
+      { key: "Cantine", label: "Cantine Scolaire" },
+      { key: "AbsencesEnseignants", label: "Absences Enseignants" },
     ],
   },
   {

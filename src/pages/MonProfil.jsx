@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   User, Mail, Phone, MapPin, Lock, Eye, EyeOff,
   CheckCircle2, XCircle, AlertCircle, Loader2, Camera, Save, X, BookOpen,
+  ShieldCheck, ShieldOff, QrCode, KeyRound,
 } from "lucide-react";
 import { ROLES } from "@/components/roles/roles";
 import { useToast } from "@/components/ui/use-toast";
@@ -40,11 +41,23 @@ function PasswordRules({ password, show }) {
   );
 }
 
-/* ── callFunction helper ─────────────────────────────── */
+/* ── callFunction helper (avec headers d'authentification) ── */
+function getAuthHeaders() {
+  try {
+    const session = JSON.parse(localStorage.getItem("edugest_session") || "null");
+    const headers = { "Content-Type": "application/json" };
+    if (session?.token) headers["X-Session-Token"] = session.token;
+    if (session?.id)    headers["X-User-Id"]       = session.id;
+    return headers;
+  } catch {
+    return { "Content-Type": "application/json" };
+  }
+}
+
 async function callFn(name, payload) {
   const res = await fetch(`/api/functions/${name}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: getAuthHeaders(),
     body: JSON.stringify(payload),
   });
   return res.json();
@@ -84,12 +97,26 @@ export default function MonProfil() {
   const [savingPwd,     setSavingPwd]     = useState(false);
   const [pwdError,      setPwdError]      = useState("");
 
+  /* ── État 2FA ── */
+  const can2FA = true; // disponible pour tous les profils
+  const [twoFAEnabled,   setTwoFAEnabled]   = useState(false);
+  const [twoFALoading,   setTwoFALoading]   = useState(false);
+  const [twoFASetupMode, setTwoFASetupMode] = useState(false); // afficher QR code
+  const [twoFAQrData,    setTwoFAQrData]    = useState(null);  // { qrDataUrl, secret }
+  const [twoFACode,      setTwoFACode]      = useState("");    // code confirmation setup
+  const [twoFADisablePwd, setTwoFADisablePwd] = useState(""); // mdp pour désactiver
+  const [showDisablePwd,  setShowDisablePwd]  = useState(false);
+  const [twoFAMsg,       setTwoFAMsg]       = useState({ type: "", text: "" });
+
   /* ── Chargement du profil ── */
   useEffect(() => {
     if (!session?.id) return;
     (async () => {
       setLoadingProfile(true);
-      const data = await callFn("appGetProfile", { user_id: session.id });
+      const [data, twoFAData] = await Promise.all([
+        callFn("appGetProfile", { user_id: session.id }),
+        can2FA ? callFn("get2FAStatus", {}) : Promise.resolve({}),
+      ]);
       if (!data.error) {
         setProfile(data);
         setEmail(data.email   || "");
@@ -99,6 +126,9 @@ export default function MonProfil() {
         try {
           setAssignedCycles(data.assigned_cycles ? JSON.parse(data.assigned_cycles) : []);
         } catch { setAssignedCycles([]); }
+      }
+      if (twoFAData && !twoFAData.error) {
+        setTwoFAEnabled(!!twoFAData.two_fa_enabled);
       }
       setLoadingProfile(false);
     })();
@@ -179,6 +209,50 @@ export default function MonProfil() {
     toast({ title: "✅ Mot de passe modifié", description: "Votre mot de passe a été mis à jour avec succès." });
   };
 
+  /* ── Handlers 2FA ── */
+  const handle2FASetup = async () => {
+    setTwoFALoading(true);
+    setTwoFAMsg({ type: "", text: "" });
+    const data = await callFn("setup2FA", {});
+    setTwoFALoading(false);
+    if (data.error) { setTwoFAMsg({ type: "error", text: data.error }); return; }
+    setTwoFAQrData({ qrDataUrl: data.qrDataUrl, secret: data.secret });
+    setTwoFASetupMode(true);
+    setTwoFACode("");
+  };
+
+  const handle2FAConfirm = async (e) => {
+    e.preventDefault();
+    const code = twoFACode.replace(/\s/g, "");
+    if (code.length !== 6) { setTwoFAMsg({ type: "error", text: "Le code doit comporter 6 chiffres." }); return; }
+    setTwoFALoading(true);
+    setTwoFAMsg({ type: "", text: "" });
+    const data = await callFn("confirm2FA", { code });
+    setTwoFALoading(false);
+    if (data.error) { setTwoFAMsg({ type: "error", text: data.error }); return; }
+    setTwoFAEnabled(true);
+    setTwoFASetupMode(false);
+    setTwoFAQrData(null);
+    setTwoFACode("");
+    setTwoFAMsg({ type: "success", text: "La 2FA est maintenant activée. Votre compte est mieux protégé !" });
+    toast({ title: "✅ 2FA activée", description: "Authentification à deux facteurs activée avec succès." });
+  };
+
+  const handle2FADisable = async (e) => {
+    e.preventDefault();
+    if (!twoFADisablePwd) { setTwoFAMsg({ type: "error", text: "Saisissez votre mot de passe actuel." }); return; }
+    setTwoFALoading(true);
+    setTwoFAMsg({ type: "", text: "" });
+    const pin_hash = await hashPin(twoFADisablePwd);
+    const data = await callFn("disable2FA", { pin_hash });
+    setTwoFALoading(false);
+    if (data.error) { setTwoFAMsg({ type: "error", text: data.error }); return; }
+    setTwoFAEnabled(false);
+    setTwoFADisablePwd("");
+    setTwoFAMsg({ type: "success", text: "La 2FA a été désactivée." });
+    toast({ title: "2FA désactivée", description: "Authentification à deux facteurs désactivée." });
+  };
+
   /* ── Avatar initiales (fallback) ── */
   const initials = (profile?.full_name || session?.full_name || "?")
     .split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase();
@@ -254,13 +328,18 @@ export default function MonProfil() {
 
       {/* ── Onglets ── */}
       <Tabs defaultValue="profil">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className={`grid w-full ${can2FA ? "grid-cols-3" : "grid-cols-2"}`}>
           <TabsTrigger value="profil">
             <User className="w-4 h-4 mr-2" /> Informations personnelles
           </TabsTrigger>
           <TabsTrigger value="password">
             <Lock className="w-4 h-4 mr-2" /> Mot de passe
           </TabsTrigger>
+          {can2FA && (
+            <TabsTrigger value="security">
+              <ShieldCheck className="w-4 h-4 mr-2" /> Sécurité 2FA
+            </TabsTrigger>
+          )}
         </TabsList>
 
         {/* ═══ Onglet Profil ═══ */}
@@ -525,6 +604,191 @@ export default function MonProfil() {
             </CardContent>
           </Card>
         </TabsContent>
+        {/* ═══ Onglet Sécurité 2FA ═══ */}
+        {can2FA && (
+          <TabsContent value="security">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <ShieldCheck className="w-5 h-5 text-blue-600" />
+                  Authentification à deux facteurs (2FA)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-5">
+
+                {/* Statut actuel */}
+                <div className={`flex items-center gap-3 p-4 rounded-xl border ${
+                  twoFAEnabled
+                    ? "bg-green-50 border-green-200"
+                    : "bg-slate-50 border-slate-200"
+                }`}>
+                  {twoFAEnabled
+                    ? <ShieldCheck className="w-8 h-8 text-green-500 flex-shrink-0" />
+                    : <ShieldOff   className="w-8 h-8 text-slate-400 flex-shrink-0" />
+                  }
+                  <div>
+                    <p className={`font-semibold ${twoFAEnabled ? "text-green-700" : "text-slate-600"}`}>
+                      {twoFAEnabled ? "2FA activée" : "2FA désactivée"}
+                    </p>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      {twoFAEnabled
+                        ? "Votre compte est protégé par une vérification TOTP à chaque connexion."
+                        : "Activez la 2FA pour sécuriser davantage votre compte avec une application d'authentification."}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Message feedback */}
+                {twoFAMsg.text && (
+                  <div className={`flex items-center gap-2 text-sm p-3 rounded-lg border ${
+                    twoFAMsg.type === "error"
+                      ? "text-red-600 bg-red-50 border-red-200"
+                      : "text-green-700 bg-green-50 border-green-200"
+                  }`}>
+                    {twoFAMsg.type === "error"
+                      ? <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                      : <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                    }
+                    {twoFAMsg.text}
+                  </div>
+                )}
+
+                {/* ── ACTIVATION : étape QR Code ── */}
+                {!twoFAEnabled && twoFASetupMode && twoFAQrData && (
+                  <div className="space-y-4">
+                    <div className="text-sm text-slate-600 bg-blue-50 border border-blue-200 rounded-lg p-3 space-y-1">
+                      <p className="font-semibold text-blue-800">📱 Instructions :</p>
+                      <ol className="list-decimal list-inside space-y-1 text-xs">
+                        <li>Installez <strong>Google Authenticator</strong>, <strong>Authy</strong> ou toute app TOTP</li>
+                        <li>Scannez le QR code ci-dessous avec l'application</li>
+                        <li>Saisissez le code à 6 chiffres affiché pour confirmer</li>
+                      </ol>
+                    </div>
+
+                    {/* QR Code */}
+                    <div className="flex flex-col items-center gap-3 p-4 bg-white border-2 border-dashed border-blue-200 rounded-xl">
+                      <QrCode className="w-5 h-5 text-blue-500" />
+                      <img
+                        src={twoFAQrData.qrDataUrl}
+                        alt="QR Code 2FA"
+                        className="w-44 h-44 rounded-lg shadow"
+                      />
+                      <p className="text-[10px] text-slate-400 text-center">
+                        Ou saisissez manuellement la clé :
+                      </p>
+                      <code className="text-xs bg-slate-100 px-3 py-1.5 rounded-lg font-mono tracking-widest text-slate-700 break-all text-center">
+                        {twoFAQrData.secret}
+                      </code>
+                    </div>
+
+                    {/* Confirmation code */}
+                    <form onSubmit={handle2FAConfirm} className="space-y-3">
+                      <label className="text-sm font-medium text-slate-700 block">
+                        <KeyRound className="inline w-4 h-4 mr-1.5 text-slate-400" />
+                        Code de confirmation (6 chiffres)
+                      </label>
+                      <Input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9 ]*"
+                        maxLength={7}
+                        placeholder="000 000"
+                        value={twoFACode}
+                        onChange={e => {
+                          const raw = e.target.value.replace(/\D/g, "").slice(0, 6);
+                          setTwoFACode(raw.length > 3 ? raw.slice(0,3) + " " + raw.slice(3) : raw);
+                        }}
+                        className="text-center text-xl tracking-[0.4em] font-mono h-12"
+                        autoComplete="one-time-code"
+                        autoFocus
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          type="submit"
+                          className="flex-1 bg-blue-600 hover:bg-blue-700"
+                          disabled={twoFALoading || twoFACode.replace(/\s/g,"").length !== 6}
+                        >
+                          {twoFALoading
+                            ? <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                            : <CheckCircle2 className="w-4 h-4 mr-2" />
+                          }
+                          Confirmer et activer
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => { setTwoFASetupMode(false); setTwoFAQrData(null); setTwoFAMsg({ type: "", text: "" }); }}
+                        >
+                          Annuler
+                        </Button>
+                      </div>
+                    </form>
+                  </div>
+                )}
+
+                {/* ── ACTIVATION : bouton initial ── */}
+                {!twoFAEnabled && !twoFASetupMode && (
+                  <Button
+                    onClick={handle2FASetup}
+                    disabled={twoFALoading}
+                    className="w-full bg-blue-600 hover:bg-blue-700"
+                  >
+                    {twoFALoading
+                      ? <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      : <ShieldCheck className="w-4 h-4 mr-2" />
+                    }
+                    Activer l'authentification à deux facteurs
+                  </Button>
+                )}
+
+                {/* ── DÉSACTIVATION ── */}
+                {twoFAEnabled && (
+                  <form onSubmit={handle2FADisable} className="space-y-3 border-t border-slate-100 pt-5">
+                    <p className="text-sm font-medium text-slate-700">
+                      Désactiver la 2FA
+                    </p>
+                    <p className="text-xs text-slate-400">
+                      Pour désactiver la 2FA, confirmez votre identité avec votre mot de passe actuel.
+                    </p>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <Input
+                        type={showDisablePwd ? "text" : "password"}
+                        placeholder="Votre mot de passe actuel"
+                        value={twoFADisablePwd}
+                        onChange={e => setTwoFADisablePwd(e.target.value)}
+                        className="pl-9 pr-10"
+                        autoComplete="current-password"
+                      />
+                      <button
+                        type="button"
+                        tabIndex={-1}
+                        onClick={() => setShowDisablePwd(v => !v)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      >
+                        {showDisablePwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    <Button
+                      type="submit"
+                      variant="destructive"
+                      className="w-full"
+                      disabled={twoFALoading || !twoFADisablePwd}
+                    >
+                      {twoFALoading
+                        ? <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                        : <ShieldOff className="w-4 h-4 mr-2" />
+                      }
+                      Désactiver la 2FA
+                    </Button>
+                  </form>
+                )}
+
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
+
       </Tabs>
     </div>
   );

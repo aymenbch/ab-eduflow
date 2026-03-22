@@ -8,6 +8,7 @@ import SystemConfigSection from "@/components/admin/SystemConfigSection";
 import AppUserManager from "@/components/admin/AppUserManager";
 import RolePermissionsManager from "@/components/admin/RolePermissionsManager";
 import NotificationSettings from "@/components/admin/NotificationSettings";
+import TwoFAPolicyManager from "@/components/admin/TwoFAPolicyManager";
 
 // ─── Access Guard ──────────────────────────────────────────────────────────────
 function AccessDenied() {
@@ -49,12 +50,15 @@ export default function Administration() {
       </div>
 
       <Tabs defaultValue="app_users">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="app_users" className="flex items-center gap-2">
             <Lock className="w-4 h-4" /> Comptes &amp; Accès
           </TabsTrigger>
           <TabsTrigger value="roles" className="flex items-center gap-2">
             <ShieldCheck className="w-4 h-4" /> Rôles &amp; Permissions
+          </TabsTrigger>
+          <TabsTrigger value="two_fa" className="flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-blue-500" /> Politique 2FA
           </TabsTrigger>
           <TabsTrigger value="notifications" className="flex items-center gap-2">
             <Bell className="w-4 h-4" /> Notifications
@@ -79,6 +83,15 @@ export default function Administration() {
         {/* ── ONGLET RÔLES & PERMISSIONS ── */}
         <TabsContent value="roles" className="mt-6">
           <RolePermissionsManager />
+        </TabsContent>
+
+        {/* ── ONGLET POLITIQUE 2FA ── */}
+        <TabsContent value="two_fa" className="mt-6">
+          <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
+            <strong>🔒 Politique d'authentification à deux facteurs (2FA)</strong> — Rendez la 2FA obligatoire pour certains rôles.
+            Les utilisateurs concernés devront configurer leur application d'authentification (Google Authenticator, Authy…) dès leur prochaine connexion.
+          </div>
+          <TwoFAPolicyManager />
         </TabsContent>
 
         {/* ── ONGLET NOTIFICATIONS ── */}

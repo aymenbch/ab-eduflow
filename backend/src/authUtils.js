@@ -175,4 +175,64 @@ function requireRole(...roles) {
   };
 }
 
-module.exports = { signSession, verifySession, loadUser, requireAuth, requireRole };
+// ── Token temporaire 2FA (TTL court : 5 minutes) ────────────────────────────
+
+const TWO_FA_TOKEN_TTL = 300; // 5 minutes en secondes
+const TWO_FA_PREFIX = '2fa:';
+
+/**
+ * Génère un token temporaire 2FA lié à un userId.
+ * Valide 5 minutes uniquement — utilisé entre l'étape mot de passe et TOTP.
+ */
+function sign2FAToken(userId) {
+  const issuedAt = Math.floor(Date.now() / 1000);
+  const payload  = `${TWO_FA_PREFIX}${userId}:${issuedAt}`;
+  const sig = crypto
+    .createHmac('sha256', SESSION_SECRET + '_2fa')
+    .update(payload)
+    .digest('hex');
+  return `${payload}.${sig}`;
+}
+
+/**
+ * Vérifie un token temporaire 2FA.
+ * @param {string} token
+ * @returns {string|null} userId si valide et non expiré, null sinon
+ */
+function verify2FAToken(token) {
+  if (!token || typeof token !== 'string') return null;
+  try {
+    if (!token.startsWith(TWO_FA_PREFIX)) return null;
+    const lastDot = token.lastIndexOf('.');
+    if (lastDot <= 0) return null;
+
+    const payload = token.substring(0, lastDot);
+    const sig     = token.substring(lastDot + 1);
+
+    const expected = crypto
+      .createHmac('sha256', SESSION_SECRET + '_2fa')
+      .update(payload)
+      .digest('hex');
+
+    if (sig.length !== expected.length) return null;
+    if (!crypto.timingSafeEqual(Buffer.from(sig, 'hex'), Buffer.from(expected, 'hex'))) return null;
+
+    // Extraire userId et timestamp depuis "2fa:{userId}:{issuedAt}"
+    const inner   = payload.substring(TWO_FA_PREFIX.length); // "{userId}:{issuedAt}"
+    const colonIdx = inner.lastIndexOf(':');
+    if (colonIdx <= 0) return null;
+
+    const userId   = inner.substring(0, colonIdx);
+    const issuedAt = parseInt(inner.substring(colonIdx + 1), 10);
+    if (!userId || isNaN(issuedAt)) return null;
+
+    const now = Math.floor(Date.now() / 1000);
+    if (now - issuedAt > TWO_FA_TOKEN_TTL) return null; // expiré
+
+    return userId;
+  } catch {
+    return null;
+  }
+}
+
+module.exports = { signSession, verifySession, sign2FAToken, verify2FAToken, loadUser, requireAuth, requireRole };

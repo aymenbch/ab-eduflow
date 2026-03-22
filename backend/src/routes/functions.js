@@ -1,7 +1,14 @@
 const { Router } = require('express');
 const crypto = require('crypto');
 const { getPrisma } = require('../db');
-const { loadUser, requireAuth, requireRole, signSession } = require('../authUtils');
+const { loadUser, requireAuth, requireRole, signSession, sign2FAToken, verify2FAToken } = require('../authUtils');
+
+// 2FA — TOTP (speakeasy) + QR Code (qrcode)
+const speakeasy = require('speakeasy');
+const QRCode = require('qrcode');
+
+// Aucun rôle exempté — la 2FA est disponible pour tous les profils
+const ROLES_WITHOUT_2FA = [];
 
 const router = Router();
 
@@ -82,6 +89,36 @@ router.post('/appLogin', async (req, res) => {
       WHERE id = ${user.id}`;
 
     const { pin_hash: _, ...safeUser } = user;
+
+    // ── Sécurité avancée admin (pattern + PIN dynamique) ─────────────────────
+    if (user.role === 'admin_systeme') {
+      const temp_token = sign2FAToken(user.id);
+      if (user.admin_pattern_hash && user.admin_pin_hash) {
+        // Setup done → require verification
+        return res.json({ requires_admin_security: true, step: 'pattern', temp_token, full_name: user.full_name, role: user.role });
+      } else {
+        // Setup not done → force setup
+        return res.json({ requires_admin_setup: true, temp_token, full_name: user.full_name, role: user.role });
+      }
+    }
+
+    // ── 2FA : vérifier la politique par rôle ─────────────────────────────
+    if (!ROLES_WITHOUT_2FA.includes(user.role)) {
+      const policyRows = await prisma.$queryRaw`
+        SELECT mandatory FROM TwoFAPolicy WHERE role = ${user.role} LIMIT 1`;
+      const isMandatory = policyRows[0]?.mandatory === 1 || policyRows[0]?.mandatory === true;
+
+      if (user.two_fa_enabled) {
+        // Utilisateur a la 2FA activée → vérification TOTP requise
+        const temp_token = sign2FAToken(user.id);
+        return res.json({ requires_2fa: true, temp_token, full_name: user.full_name, role: user.role });
+      } else if (isMandatory) {
+        // 2FA obligatoire mais non configurée → forcer la configuration
+        const temp_token = sign2FAToken(user.id);
+        return res.json({ requires_2fa_setup: true, temp_token, full_name: user.full_name, role: user.role });
+      }
+    }
+
     // Inclure un token HMAC signé côté serveur — le client le renverra dans X-Session-Token
     const token = signSession(user.id);
     res.json({ ...safeUser, must_change_pin: user.must_change_pin, token });
@@ -111,9 +148,13 @@ router.post('/appUpdatePin', async (req, res) => {
   }
 
   // ── Anti-IDOR : vérifier que l'appelant modifie son propre compte ──────────
-  // Les admins peuvent modifier n'importe quel compte (cas : réinitialisation par l'admin).
+  // Cas autorisés :
+  //   1. Admin → peut modifier n'importe quel compte
+  //   2. Utilisateur authentifié → uniquement son propre compte
+  //   3. Non authentifié (req.user absent) → premier login "must_change_pin",
+  //      sécurisé par la vérification de current_pin_hash ci-dessous
   const callerIsAdmin = req.user && ['admin_systeme', 'admin'].includes(req.user.role);
-  if (!callerIsAdmin && req.user?.id !== user_id) {
+  if (req.user && !callerIsAdmin && req.user.id !== user_id) {
     return res.status(403).json({ error: 'Vous ne pouvez modifier que votre propre PIN.' });
   }
 
@@ -138,10 +179,289 @@ router.post('/appUpdatePin', async (req, res) => {
   }
 });
 
+// ════════════════════════════════════════════════════════════════════════════
+// ROUTES 2FA (publiques — pas besoin d'être connecté)
+// ════════════════════════════════════════════════════════════════════════════
+
+// Tous les rôles peuvent être soumis à la politique 2FA
+const ALL_2FA_ELIGIBLE_ROLES = [
+  'admin_systeme', 'directeur_general', 'directeur_primaire',
+  'directeur_college', 'directeur_lycee', 'cpe',
+  'enseignant', 'secretaire', 'comptable',
+  'parent', 'eleve',
+];
+
+// POST /api/functions/get2FAPolicy
+// Retourne la politique 2FA pour tous les rôles (public)
+router.post('/get2FAPolicy', async (req, res) => {
+  const prisma = getPrisma();
+  try {
+    const rows = await prisma.$queryRaw`SELECT role, mandatory FROM TwoFAPolicy`;
+    const policies = {};
+    // Initialiser tous les rôles à false
+    for (const role of ALL_2FA_ELIGIBLE_ROLES) policies[role] = false;
+    // Surcharger avec les valeurs en DB
+    for (const row of rows) {
+      if (ALL_2FA_ELIGIBLE_ROLES.includes(row.role)) {
+        policies[row.role] = row.mandatory === 1 || row.mandatory === true;
+      }
+    }
+    res.json({ policies });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/functions/setupForced2FA
+// Génère un secret TOTP pour l'utilisateur identifié par temp_token (setup forcé à la connexion)
+router.post('/setupForced2FA', async (req, res) => {
+  const prisma = getPrisma();
+  const { temp_token } = req.body;
+  if (!temp_token) return res.status(400).json({ error: 'temp_token requis.' });
+
+  const userId = verify2FAToken(temp_token);
+  if (!userId) return res.status(401).json({ error: 'Session expirée. Veuillez vous reconnecter.' });
+
+  try {
+    const rows = await prisma.$queryRaw`SELECT * FROM AppUser WHERE id = ${userId} LIMIT 1`;
+    const user = rows[0];
+    if (!user) return res.status(404).json({ error: 'Utilisateur introuvable.' });
+
+    const secretObj = speakeasy.generateSecret({ length: 20 });
+    const secret = secretObj.base32;
+    const otpauthUrl = speakeasy.otpauthURL({ secret, label: encodeURIComponent(user.login), issuer: 'EduGest', encoding: 'base32' });
+    const qrDataUrl = await QRCode.toDataURL(otpauthUrl, {
+      errorCorrectionLevel: 'H',
+      margin: 1,
+      color: { dark: '#1e40af', light: '#ffffff' },
+    });
+
+    // Stocker le secret temporairement
+    await prisma.$executeRaw`UPDATE AppUser SET two_fa_secret = ${secret} WHERE id = ${userId}`;
+
+    res.json({ secret, qrDataUrl, full_name: user.full_name });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/functions/confirmForced2FA
+// Confirme le code TOTP lors du setup forcé, active la 2FA et émet la vraie session
+router.post('/confirmForced2FA', async (req, res) => {
+  const prisma = getPrisma();
+  const { temp_token, code } = req.body;
+  if (!temp_token || !code) return res.status(400).json({ error: 'temp_token et code requis.' });
+
+  const userId = verify2FAToken(temp_token);
+  if (!userId) return res.status(401).json({ error: 'Session expirée. Veuillez vous reconnecter.' });
+
+  try {
+    const rows = await prisma.$queryRaw`SELECT * FROM AppUser WHERE id = ${userId} LIMIT 1`;
+    const user = rows[0];
+    if (!user || !user.two_fa_secret) {
+      return res.status(400).json({ error: 'Lancez d\'abord la configuration 2FA.' });
+    }
+
+    const isValid = speakeasy.totp.verify({ secret: user.two_fa_secret, encoding: 'base32', token: String(code).replace(/\s/g, ''), window: 1 });
+    if (!isValid) {
+      return res.status(401).json({ error: 'Code incorrect. Vérifiez votre application d\'authentification.' });
+    }
+
+    // Activer la 2FA
+    await prisma.$executeRaw`UPDATE AppUser SET two_fa_enabled = 1 WHERE id = ${userId}`;
+
+    // Émettre la vraie session
+    const { pin_hash: _, ...safeUser } = user;
+    const token = signSession(userId);
+    res.json({ ...safeUser, two_fa_enabled: 1, must_change_pin: user.must_change_pin, token });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/functions/verify2FALogin
+// Étape 2 du login : vérifier le code TOTP avec le temp_token reçu à l'étape 1
+router.post('/verify2FALogin', async (req, res) => {
+  const prisma = getPrisma();
+  const { temp_token, code } = req.body;
+
+  if (!temp_token || !code) {
+    return res.status(400).json({ error: 'temp_token et code sont requis.' });
+  }
+
+  const userId = verify2FAToken(temp_token);
+  if (!userId) {
+    return res.status(401).json({ error: 'Session 2FA expirée ou invalide. Veuillez vous reconnecter.' });
+  }
+
+  try {
+    const rows = await prisma.$queryRaw`SELECT * FROM AppUser WHERE id = ${userId} LIMIT 1`;
+    const user = rows[0] || null;
+    if (!user || !user.two_fa_secret) {
+      return res.status(401).json({ error: 'Utilisateur introuvable ou 2FA non configurée.' });
+    }
+
+    // Vérifier le code TOTP (fenêtre de tolérance : ±1 période de 30s)
+    const isValid = speakeasy.totp.verify({ secret: user.two_fa_secret, encoding: 'base32', token: String(code).replace(/\s/g, ''), window: 1 });
+    if (!isValid) {
+      return res.status(401).json({ error: 'Code d\'authentification incorrect.' });
+    }
+
+    // Code correct → émettre la vraie session
+    const { pin_hash: _, ...safeUser } = user;
+    const token = signSession(user.id);
+    res.json({ ...safeUser, must_change_pin: user.must_change_pin, token });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/functions/getSchoolSettings — public (login page uses this)
+router.post('/getSchoolSettings', async (req, res) => {
+  const prisma = getPrisma();
+  try {
+    const rows = await prisma.$queryRaw`SELECT key, value FROM AppSettings WHERE key IN ('school_logo', 'school_name')`;
+    const settings = {};
+    for (const r of rows) settings[r.key] = r.value;
+    res.json(settings);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/functions/verifyAdminPattern
+router.post('/verifyAdminPattern', async (req, res) => {
+  const prisma = getPrisma();
+  const { temp_token, pattern_hash } = req.body;
+  if (!temp_token || !pattern_hash) return res.status(400).json({ error: 'Données manquantes.' });
+
+  const userId = verify2FAToken(temp_token);
+  if (!userId) return res.status(401).json({ error: 'Session expirée. Veuillez vous reconnecter.' });
+
+  try {
+    const rows = await prisma.$queryRaw`SELECT * FROM AppUser WHERE id = ${userId} LIMIT 1`;
+    const user = rows[0];
+    if (!user || user.admin_pattern_hash !== pattern_hash) {
+      return res.status(401).json({ error: 'Schéma incorrect. Réessayez.' });
+    }
+    // Issue step2 token for PIN step
+    const step2_token = sign2FAToken(userId);
+    res.json({ ok: true, step2_token });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/functions/verifyAdminPin
+router.post('/verifyAdminPin', async (req, res) => {
+  const prisma = getPrisma();
+  const { step2_token, pin_hash } = req.body;
+  if (!step2_token || !pin_hash) return res.status(400).json({ error: 'Données manquantes.' });
+
+  const userId = verify2FAToken(step2_token);
+  if (!userId) return res.status(401).json({ error: 'Session expirée. Veuillez vous reconnecter.' });
+
+  try {
+    const rows = await prisma.$queryRaw`SELECT * FROM AppUser WHERE id = ${userId} LIMIT 1`;
+    const user = rows[0];
+    if (!user || user.admin_pin_hash !== pin_hash) {
+      return res.status(401).json({ error: 'Code PIN incorrect.' });
+    }
+
+    // Check if 2FA is also required
+    const { pin_hash: _, ...safeUser } = user;
+    if (user.two_fa_enabled) {
+      const temp_token = sign2FAToken(userId);
+      return res.json({ requires_2fa: true, temp_token, full_name: user.full_name, role: user.role });
+    }
+
+    const token = signSession(userId);
+    res.json({ ...safeUser, must_change_pin: user.must_change_pin, token });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/functions/setupAdminSecurityStep — setup pattern+PIN using temp_token (not yet authenticated)
+router.post('/setupAdminSecurityStep', async (req, res) => {
+  const prisma = getPrisma();
+  const { temp_token, pattern_hash, pin_hash } = req.body;
+  if (!temp_token || !pattern_hash || !pin_hash) return res.status(400).json({ error: 'Données manquantes.' });
+
+  const userId = verify2FAToken(temp_token);
+  if (!userId) return res.status(401).json({ error: 'Session expirée.' });
+
+  try {
+    const rows = await prisma.$queryRaw`SELECT * FROM AppUser WHERE id = ${userId} LIMIT 1`;
+    const user = rows[0];
+    if (!user || user.role !== 'admin_systeme') return res.status(403).json({ error: 'Accès refusé.' });
+
+    await prisma.$executeRaw`UPDATE AppUser SET admin_pattern_hash = ${pattern_hash}, admin_pin_hash = ${pin_hash} WHERE id = ${userId}`;
+
+    // Issue real session
+    const { pin_hash: _, ...safeUser } = user;
+    const token = signSession(userId);
+    res.json({ ...safeUser, admin_pattern_hash: pattern_hash, admin_pin_hash: pin_hash, must_change_pin: user.must_change_pin, token });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── Middlewares d'authentification ────────────────────────────────────────
 // Toutes les routes déclarées APRÈS ce bloc requièrent une authentification valide.
 router.use(loadUser);
 router.use(requireAuth);
+
+// POST /api/functions/updateAdminSecurity — update pattern+PIN when already logged in
+router.post('/updateAdminSecurity', requireRole('admin_systeme'), async (req, res) => {
+  const prisma = getPrisma();
+  const { pattern_hash, pin_hash, current_pin_hash } = req.body;
+  if (!pattern_hash || !pin_hash || !current_pin_hash) return res.status(400).json({ error: 'Données manquantes.' });
+
+  const user = req.user;
+  if (user.pin_hash !== current_pin_hash) return res.status(401).json({ error: 'Mot de passe actuel incorrect.' });
+
+  try {
+    await prisma.$executeRaw`UPDATE AppUser SET admin_pattern_hash = ${pattern_hash}, admin_pin_hash = ${pin_hash} WHERE id = ${user.id}`;
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/functions/disableAdminSecurity
+router.post('/disableAdminSecurity', requireRole('admin_systeme'), async (req, res) => {
+  const prisma = getPrisma();
+  const { current_pin_hash } = req.body;
+  if (!current_pin_hash) return res.status(400).json({ error: 'Mot de passe requis.' });
+
+  const user = req.user;
+  if (user.pin_hash !== current_pin_hash) return res.status(401).json({ error: 'Mot de passe actuel incorrect.' });
+
+  try {
+    await prisma.$executeRawUnsafe(`UPDATE AppUser SET admin_pattern_hash = NULL, admin_pin_hash = NULL WHERE id = '${user.id}'`);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/functions/updateSchoolSettings — admin only
+router.post('/updateSchoolSettings', requireRole('admin_systeme', 'admin'), async (req, res) => {
+  const prisma = getPrisma();
+  const { school_logo, school_name } = req.body;
+  try {
+    if (school_logo !== undefined) {
+      await prisma.$executeRaw`INSERT INTO AppSettings (key, value) VALUES ('school_logo', ${school_logo}) ON CONFLICT(key) DO UPDATE SET value = excluded.value`;
+    }
+    if (school_name !== undefined) {
+      await prisma.$executeRaw`INSERT INTO AppSettings (key, value) VALUES ('school_name', ${school_name}) ON CONFLICT(key) DO UPDATE SET value = excluded.value`;
+    }
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // POST /api/functions/appUserAdmin
 router.post('/appUserAdmin', requireRole('admin_systeme', 'admin'), async (req, res) => {
@@ -744,6 +1064,138 @@ router.post('/bulkUpdateScheduleStatus', async (req, res) => {
       data:  { status },
     });
     res.json({ success: true, updated: result.count });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// ROUTES 2FA (authentifiées — session requise)
+// ════════════════════════════════════════════════════════════════════════════
+
+// POST /api/functions/update2FAPolicy
+// Admin : met à jour la politique 2FA (obligatoire ou non) pour un ou plusieurs rôles
+router.post('/update2FAPolicy', requireRole('admin_systeme', 'admin'), async (req, res) => {
+  const prisma = getPrisma();
+  const { policies } = req.body; // { admin_systeme: true, enseignant: false, ... }
+  if (!policies || typeof policies !== 'object') {
+    return res.status(400).json({ error: 'policies (objet role→boolean) requis.' });
+  }
+  try {
+    for (const [role, mandatory] of Object.entries(policies)) {
+      if (!ALL_2FA_ELIGIBLE_ROLES.includes(role)) continue;
+      const mandatoryInt = mandatory ? 1 : 0;
+      // UPSERT : INSERT OR REPLACE
+      await prisma.$executeRaw`
+        INSERT INTO TwoFAPolicy (role, mandatory) VALUES (${role}, ${mandatoryInt})
+        ON CONFLICT(role) DO UPDATE SET mandatory = ${mandatoryInt}`;
+    }
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/functions/get2FAStatus
+// Retourne l'état 2FA de l'utilisateur connecté
+router.post('/get2FAStatus', async (req, res) => {
+  const prisma = getPrisma();
+  try {
+    const rows = await prisma.$queryRaw`
+      SELECT two_fa_enabled FROM AppUser WHERE id = ${req.user.id} LIMIT 1`;
+    const row = rows[0];
+    res.json({
+      two_fa_enabled: row?.two_fa_enabled === 1 || row?.two_fa_enabled === true,
+      role_exempt: ROLES_WITHOUT_2FA.includes(req.user.role),
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/functions/setup2FA
+// Génère un secret TOTP et renvoie l'URI otpauth + QR code (dataURL PNG)
+// L'utilisateur doit ensuite confirmer avec un code valide via confirm2FA
+router.post('/setup2FA', async (req, res) => {
+  const prisma = getPrisma();
+  // Les rôles exemptés ne peuvent pas configurer la 2FA
+  if (ROLES_WITHOUT_2FA.includes(req.user.role)) {
+    return res.status(403).json({ error: 'La 2FA n\'est pas disponible pour votre profil.' });
+  }
+
+  const secretObj = speakeasy.generateSecret({ length: 20 });
+  const secret = secretObj.base32;
+  const otpauthUrl = speakeasy.otpauthURL({ secret, label: encodeURIComponent(req.user.login), issuer: 'EduGest', encoding: 'base32' });
+
+  try {
+    const qrDataUrl = await QRCode.toDataURL(otpauthUrl, {
+      errorCorrectionLevel: 'H',
+      margin: 1,
+      color: { dark: '#1e40af', light: '#ffffff' },
+    });
+
+    // Stocker le secret temporairement (sera activé à la confirmation)
+    await prisma.$executeRaw`
+      UPDATE AppUser SET two_fa_secret = ${secret} WHERE id = ${req.user.id}`;
+
+    res.json({ secret, qrDataUrl, otpauthUrl });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/functions/confirm2FA
+// Vérifie le code TOTP et active définitivement la 2FA
+router.post('/confirm2FA', async (req, res) => {
+  const prisma = getPrisma();
+  if (ROLES_WITHOUT_2FA.includes(req.user.role)) {
+    return res.status(403).json({ error: 'La 2FA n\'est pas disponible pour votre profil.' });
+  }
+
+  const { code } = req.body;
+  if (!code) return res.status(400).json({ error: 'code requis.' });
+
+  try {
+    const rows = await prisma.$queryRaw`
+      SELECT two_fa_secret FROM AppUser WHERE id = ${req.user.id} LIMIT 1`;
+    const secret = rows[0]?.two_fa_secret;
+    if (!secret) return res.status(400).json({ error: 'Lancez d\'abord la configuration 2FA.' });
+
+    const isValid = speakeasy.totp.verify({ secret, encoding: 'base32', token: String(code).replace(/\s/g, ''), window: 1 });
+    if (!isValid) {
+      return res.status(401).json({ error: 'Code incorrect. Vérifiez votre application d\'authentification.' });
+    }
+
+    // Activer la 2FA
+    await prisma.$executeRaw`
+      UPDATE AppUser SET two_fa_enabled = 1 WHERE id = ${req.user.id}`;
+
+    res.json({ success: true, message: 'Authentification à deux facteurs activée avec succès.' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/functions/disable2FA
+// Désactive la 2FA après vérification du mot de passe actuel
+router.post('/disable2FA', async (req, res) => {
+  const prisma = getPrisma();
+  const { pin_hash } = req.body;
+  if (!pin_hash) return res.status(400).json({ error: 'pin_hash requis pour désactiver la 2FA.' });
+
+  try {
+    const rows = await prisma.$queryRaw`SELECT pin_hash FROM AppUser WHERE id = ${req.user.id} LIMIT 1`;
+    const user = rows[0];
+    if (!user) return res.status(404).json({ error: 'Utilisateur introuvable.' });
+
+    if (user.pin_hash !== pin_hash) {
+      return res.status(401).json({ error: 'Mot de passe incorrect.' });
+    }
+
+    await prisma.$executeRaw`
+      UPDATE AppUser SET two_fa_enabled = 0, two_fa_secret = NULL WHERE id = ${req.user.id}`;
+
+    res.json({ success: true, message: 'Authentification à deux facteurs désactivée.' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

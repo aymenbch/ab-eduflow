@@ -6,7 +6,7 @@ import {
   ClipboardList, MessageSquare, FileText, AlertTriangle, Menu, X,
   School, UserCog, Clock, Bell, ChevronDown, LogOut, RefreshCw, UserCircle,
   DollarSign, ShieldCheck, BarChart2, CalendarDays, Smartphone,
-  Star, TrendingUp, Network, DoorOpen, Video, Upload, GitBranch, Ticket,
+  Star, TrendingUp, Network, DoorOpen, Video, Upload, GitBranch, Ticket, UtensilsCrossed, UserX,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -30,7 +30,7 @@ const ALL_NAVIGATION = [
   { name: "Matières",               href: "Subjects",         icon: BookOpen },
   { name: "Personnel",              href: "Staff",            icon: UserCog },
   { name: "Emploi du temps",        href: "Schedule",         icon: Clock },
-  { name: "Salles & Infrastructures", href: "Rooms",           icon: DoorOpen },
+  { name: "Salles & Infrastructures", href: "Rooms",          icon: DoorOpen },
   { name: "Examens & Notes",        href: "Exams",            icon: ClipboardList },
   { name: "Calculs & Moyennes",     href: "Moyennes",         icon: BarChart2 },
   { name: "Devoirs",                href: "Homework",         icon: FileText },
@@ -55,10 +55,45 @@ const ALL_NAVIGATION = [
   { name: "Import de données",      href: "Import",           icon: Upload },
   { name: "Organigramme",           href: "OrgChart",         icon: GitBranch },
   { name: "Demandes Internes",      href: "Tickets",          icon: Ticket },
+  { name: "Cantine Scolaire",       href: "Cantine",          icon: UtensilsCrossed },
+  { name: "Absences Enseignants",   href: "AbsencesEnseignants", icon: UserX },
+  { name: "Administration",         href: "Administration",   icon: ShieldCheck },
 ];
 
-const ADMIN_NAV = [
-  { name: "Administration", href: "Administration", icon: ShieldCheck },
+// Regroupement des modules en catégories pour la sidebar
+const NAV_CATEGORIES = [
+  {
+    label: null,
+    hrefs: ["Dashboard"],
+  },
+  {
+    label: "Élèves",
+    hrefs: ["Students", "Classes", "AffectationEleves", "PassageDeClasse", "StudentDashboard"],
+  },
+  {
+    label: "Équipe pédagogique",
+    hrefs: ["Teachers", "Subjects", "Staff", "Schedule", "Rooms", "AbsencesEnseignants"],
+  },
+  {
+    label: "Pédagogie",
+    hrefs: ["Exams", "Moyennes", "Homework", "Resources", "Bulletins", "MobileSaisie"],
+  },
+  {
+    label: "Vie scolaire",
+    hrefs: ["Attendance", "Sanctions", "Cantine"],
+  },
+  {
+    label: "Communication",
+    hrefs: ["Messages", "Events", "Visio", "SocialNetwork", "EspaceParent"],
+  },
+  {
+    label: "Pilotage",
+    hrefs: ["Pilotage", "Moyennes", "ProjectsScrum", "OrgChart"],
+  },
+  {
+    label: "Administration",
+    hrefs: ["Finance", "SchoolYearManager", "Import", "Affectation", "Tickets", "Administration"],
+  },
 ];
 
 export default function Layout({ children, currentPageName }) {
@@ -115,10 +150,25 @@ export default function Layout({ children, currentPageName }) {
   };
 
   const effectivePages = currentRole ? getEffectivePages(currentRole) : [];
-  const navigation = currentRole && roleConfig
-    ? ALL_NAVIGATION.filter(item => effectivePages.includes(item.href))
-    : ALL_NAVIGATION;
+  const navMap = Object.fromEntries(ALL_NAVIGATION.map(item => [item.href, item]));
+  const visibleHrefs = new Set(
+    currentRole && roleConfig
+      ? ALL_NAVIGATION.filter(item => effectivePages.includes(item.href)).map(i => i.href)
+      : ALL_NAVIGATION.map(i => i.href)
+  );
   const isAdmin = currentRole === "admin_systeme";
+
+  // Catégorie ouverte par défaut = celle qui contient la page active
+  const activeCatIdx = NAV_CATEGORIES.findIndex(cat => cat.hrefs.includes(currentPath));
+  const [openCats, setOpenCats] = useState(() => new Set(activeCatIdx >= 0 ? [activeCatIdx] : []));
+
+  const toggleCat = (idx) => {
+    setOpenCats(prev => {
+      const next = new Set(prev);
+      next.has(idx) ? next.delete(idx) : next.add(idx);
+      return next;
+    });
+  };
 
   useEffect(() => {
     const exemptPages = ["RoleSelect", "AppLogin", "Grades", "StudentDetail", "MonProfil"];
@@ -182,49 +232,61 @@ export default function Layout({ children, currentPageName }) {
 
           {/* Navigation */}
           <ScrollArea className="flex-1 px-4 py-4">
-            <nav className="space-y-1.5">
-              {navigation.map((item) => {
-                const isActive = currentPath === item.href;
+            <nav className="space-y-0.5">
+              {NAV_CATEGORIES.map((category, catIdx) => {
+                const items = category.hrefs
+                  .map(href => navMap[href])
+                  .filter(item => item && visibleHrefs.has(item.href));
+                if (items.length === 0) return null;
+                const isOpen = !category.label || openCats.has(catIdx);
+                const hasActive = items.some(i => i.href === currentPath);
                 return (
-                  <Link
-                    key={item.name}
-                    to={createPageUrl(item.href)}
-                    onClick={() => setSidebarOpen(false)}
-                    className={cn(
-                      "sidebar-item layout-nav-item flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium",
-                      isActive ? "active" : ""
-                    )}
-                  >
-                    <item.icon className="w-5 h-5" />
-                    {item.name}
-                  </Link>
-                );
-              })}
-
-              {isAdmin && (
-                <>
-                  <div className="pt-3 pb-1">
-                    <p className="text-xs sidebar-text-muted uppercase tracking-wider px-4">Administration</p>
-                  </div>
-                  {ADMIN_NAV.map((item) => {
-                    const isActive = currentPath === item.href;
-                    return (
-                      <Link
-                        key={item.name}
-                        to={createPageUrl(item.href)}
-                        onClick={() => setSidebarOpen(false)}
+                  <div key={catIdx} className={catIdx > 0 ? "pt-2" : ""}>
+                    {category.label && (
+                      <button
+                        onClick={() => toggleCat(catIdx)}
                         className={cn(
-                          "sidebar-item layout-nav-item flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium",
-                          isActive ? "active" : ""
+                          "w-full flex items-center justify-between px-3 py-1.5 rounded-lg mb-0.5 transition-colors",
+                          "hover:bg-white/10",
+                          hasActive && !isOpen ? "bg-white/10" : ""
                         )}
                       >
-                        <item.icon className="w-5 h-5" />
-                        {item.name}
-                      </Link>
-                    );
-                  })}
-                </>
-              )}
+                        <span className={cn(
+                          "text-[11px] uppercase tracking-widest font-bold border-l-2 pl-2",
+                          hasActive ? "sidebar-text-hi opacity-90 border-current" : "sidebar-text-muted opacity-70 border-transparent"
+                        )}>
+                          {category.label}
+                        </span>
+                        <ChevronDown className={cn(
+                          "w-3.5 h-3.5 sidebar-text-muted transition-transform duration-200",
+                          isOpen ? "rotate-0" : "-rotate-90"
+                        )} />
+                      </button>
+                    )}
+                    {isOpen && (
+                      <div className="space-y-0.5">
+                        {items.map((item) => {
+                          const isActive = currentPath === item.href;
+                          return (
+                            <Link
+                              key={item.href}
+                              to={createPageUrl(item.href)}
+                              onClick={() => setSidebarOpen(false)}
+                              className={cn(
+                                "sidebar-item layout-nav-item flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium",
+                                isActive ? "active" : ""
+                              )}
+                            >
+                              <item.icon className="w-5 h-5" />
+                              {item.name}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </nav>
           </ScrollArea>
 
@@ -279,7 +341,7 @@ export default function Layout({ children, currentPageName }) {
               </Button>
               <div className="hidden md:block">
                 <h2 className="text-lg font-semibold main-text-hi">
-                  {[...ALL_NAVIGATION, ...ADMIN_NAV].find(n => n.href === currentPath)?.name
+                  {ALL_NAVIGATION.find(n => n.href === currentPath)?.name
                     || PAGE_LABELS[currentPageName]
                     || "Tableau de bord"}
                 </h2>
