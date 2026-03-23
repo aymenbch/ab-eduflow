@@ -80,6 +80,7 @@ const notificationRoutes = require('./routes/notifications');
 const cantineRoutes = require('./routes/cantine');
 const absenceRoutes = require('./routes/absences');
 const rhRoutes = require('./routes/rh');
+const financeV2Routes = require('./routes/financeV2');
 const { loadUser, requireAuth } = require('./authUtils');
 
 const app = express();
@@ -163,6 +164,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/cantine', cantineRoutes);
 app.use('/api/absences', absenceRoutes);
 app.use('/api/rh', rhRoutes);
+app.use('/api/finv2', financeV2Routes);
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));

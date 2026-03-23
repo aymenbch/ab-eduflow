@@ -10,8 +10,30 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   TrendingUp, TrendingDown, Minus, Bell, MessageCircle, Calendar,
   AlertTriangle, CheckCircle, BookOpen, Clock, Send, Star, User,
-  ChevronRight, Sparkles, Shield, Award, Loader2, CalendarCheck, ChevronDown
+  ChevronRight, Sparkles, Shield, Award, Loader2, CalendarCheck, ChevronDown,
+  DollarSign, Download, Receipt
 } from "lucide-react";
+import { generateReceipt } from "@/utils/pdf/generateReceipt";
+import { getSession } from "@/components/auth/appAuth";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+
+const FIN_API = "http://localhost:3001/api/finv2";
+function finFetch(path) {
+  const s = getSession();
+  const headers = { "Content-Type": "application/json" };
+  if (s?.token) headers["X-Session-Token"] = s.token;
+  return fetch(`${FIN_API}${path}`, { headers }).then(r => r.json());
+}
+
+const STATUS_FIN = {
+  paid:    { label: "Payé",      color: "bg-emerald-100 text-emerald-800" },
+  partial: { label: "Partiel",   color: "bg-amber-100 text-amber-800" },
+  overdue: { label: "En retard", color: "bg-red-100 text-red-800" },
+  unpaid:  { label: "Impayé",    color: "bg-slate-100 text-slate-600" },
+};
+
+const PAYMENT_METHODS_FR = { cash: "Espèces", cheque: "Chèque", virement: "Virement", carte: "Carte" };
 import { useCurrentMember } from "@/components/hooks/useCurrentMember";
 import { subjectAveragesForStudent, studentWeightedAvg, avgColorClass } from "@/utils/gradeUtils";
 
@@ -21,6 +43,7 @@ const TABS = [
   { id: "notifications", label: "🔔 Notifications", icon: Bell },
   { id: "chat", label: "💬 Chat", icon: MessageCircle },
   { id: "rdv", label: "📅 Rendez-vous", icon: Calendar },
+  { id: "factures", label: "💰 Factures", icon: DollarSign },
 ];
 
 // ─── Couleurs par index d'enfant ─────────────────────────────
@@ -65,6 +88,13 @@ export default function EspaceParent() {
   const child      = students.find(s => s.id === selectedChildId) || students[0];
   const childIndex = students.findIndex(s => s.id === child?.id);
   const childColor = CHILD_COLORS[Math.max(0, childIndex) % CHILD_COLORS.length];
+
+  // Factures de l'enfant actif
+  const { data: childInvoices = [] } = useQuery({
+    queryKey: ["fin_student_invoices", child?.id],
+    queryFn: () => finFetch(`/student/${child.id}`),
+    enabled: !!child?.id && activeTab === "factures",
+  });
 
   return (
     <div className="space-y-5 max-w-4xl mx-auto">
@@ -156,6 +186,9 @@ export default function EspaceParent() {
       )}
       {activeTab === "rdv" && (
         <RdvTab teachers={teachers} child={child} />
+      )}
+      {activeTab === "factures" && (
+        <FacturesTab invoices={childInvoices} child={child} />
       )}
     </div>
   );
@@ -1025,6 +1058,158 @@ function RdvTab({ teachers, child }) {
           )}
         </>
       )}
+    </div>
+  );
+}
+
+// ─── FACTURES TAB ─────────────────────────────────────────────────────────────
+function FacturesTab({ invoices, child }) {
+  const fmtDA = n => Number(n || 0).toLocaleString("fr-DZ") + " DA";
+
+  const totalNet       = invoices.reduce((s, i) => s + (Number(i.net_amount)  || 0), 0);
+  const totalPaid      = invoices.reduce((s, i) => s + (Number(i.paid_amount) || 0), 0);
+  const totalBalance   = invoices.reduce((s, i) => s + (Number(i.balance)     || 0), 0);
+  const globalPct      = totalNet > 0 ? Math.min(100, Math.round((totalPaid / totalNet) * 100)) : 0;
+
+  const handleDownload = (tx, invoice) => {
+    generateReceipt({ transaction: tx, invoice, student: child, schoolName: "EduGest" });
+  };
+
+  if (invoices.length === 0) {
+    return (
+      <div className="text-center py-16 text-slate-400">
+        <DollarSign className="w-12 h-12 mx-auto mb-3 opacity-30" />
+        <p className="text-sm">Aucune facture pour cet élève</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-5">
+      {/* Summary card */}
+      <Card className="overflow-hidden">
+        <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 p-5 text-white">
+          <p className="text-sm opacity-80 mb-1">Situation financière de {child?.first_name}</p>
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <p className="text-3xl font-bold">{fmtDA(totalBalance)}</p>
+              <p className="text-sm opacity-70 mt-0.5">reste à payer</p>
+            </div>
+            <div className="text-right text-sm opacity-80">
+              <p>{fmtDA(totalPaid)} payé</p>
+              <p>{fmtDA(totalNet)} total</p>
+            </div>
+          </div>
+          <div className="mt-4">
+            <div className="flex justify-between text-xs mb-1.5">
+              <span>Progression</span>
+              <span className="font-semibold">{globalPct}%</span>
+            </div>
+            <div className="w-full bg-white/20 rounded-full h-2.5">
+              <div
+                className={`h-2.5 rounded-full transition-all ${globalPct >= 100 ? "bg-emerald-400" : globalPct > 0 ? "bg-amber-400" : "bg-white/40"}`}
+                style={{ width: `${globalPct}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* Per-invoice cards */}
+      {invoices.map(inv => {
+        const st  = STATUS_FIN[inv.status] || STATUS_FIN.unpaid;
+        const pct = inv.net_amount > 0 ? Math.min(100, Math.round(((inv.paid_amount || 0) / inv.net_amount) * 100)) : 0;
+
+        return (
+          <Card key={inv.id} className="overflow-hidden">
+            <CardContent className="p-4 space-y-3">
+              {/* Header */}
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="font-semibold text-slate-800">{inv.label || `Scolarité ${inv.school_year}`}</p>
+                  <p className="text-xs text-slate-400">{inv.school_year}</p>
+                </div>
+                <Badge className={`${st.color} text-xs flex-shrink-0`}>{st.label}</Badge>
+              </div>
+
+              {/* Progress bar */}
+              <div>
+                <div className="flex justify-between text-xs text-slate-500 mb-1">
+                  <span>{fmtDA(inv.paid_amount)} payé</span>
+                  <span className="font-semibold">{pct}%</span>
+                </div>
+                <div className="w-full bg-slate-200 rounded-full h-2">
+                  <div
+                    className={`h-2 rounded-full transition-all ${pct >= 100 ? "bg-emerald-500" : pct > 0 ? "bg-amber-500" : "bg-slate-300"}`}
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+                <div className="flex justify-between text-[11px] text-slate-400 mt-1">
+                  <span>Reste : {fmtDA(inv.balance)}</span>
+                  <span>Total : {fmtDA(inv.net_amount)}</span>
+                </div>
+              </div>
+
+              {/* Detail items */}
+              {inv.items?.length > 0 && (
+                <details className="text-xs">
+                  <summary className="cursor-pointer text-indigo-600 font-medium py-1">
+                    Voir le détail ({inv.items.length} ligne{inv.items.length > 1 ? "s" : ""})
+                  </summary>
+                  <div className="mt-2 space-y-1">
+                    {inv.items.map(it => (
+                      <div key={it.id} className="flex justify-between text-slate-600 py-0.5">
+                        <span>{it.label}{it.quantity > 1 ? ` × ${it.quantity}` : ""}</span>
+                        <span className="font-mono">{fmtDA(Number(it.amount) * Number(it.quantity))}</span>
+                      </div>
+                    ))}
+                    {Number(inv.discount_amount) > 0 && (
+                      <div className="flex justify-between text-emerald-600 pt-1 border-t">
+                        <span>Remise</span>
+                        <span className="font-mono">− {fmtDA(inv.discount_amount)}</span>
+                      </div>
+                    )}
+                  </div>
+                </details>
+              )}
+
+              {/* Payment history with PDF download */}
+              {inv.transactions?.length > 0 && (
+                <div className="border-t pt-3 space-y-2">
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Paiements effectués</p>
+                  {inv.transactions.map(tx => (
+                    <div key={tx.id} className="flex items-center justify-between bg-emerald-50 rounded-lg px-3 py-2">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                        <div>
+                          <p className="text-sm font-semibold text-emerald-800">{fmtDA(tx.amount)}</p>
+                          <p className="text-[11px] text-slate-500">
+                            {PAYMENT_METHODS_FR[tx.payment_method] || tx.payment_method}
+                            {tx.reference ? ` · ${tx.reference}` : ""}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-slate-400">
+                          {tx.payment_date ? format(new Date(tx.payment_date + "T12:00:00"), "d MMM yy", { locale: fr }) : ""}
+                        </span>
+                        <button
+                          onClick={() => handleDownload(tx, inv)}
+                          className="flex items-center gap-1 text-indigo-600 hover:text-indigo-800 text-[11px] font-medium transition-colors"
+                          title="Télécharger le reçu PDF"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          Reçu
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 }
