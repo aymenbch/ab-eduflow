@@ -16,7 +16,7 @@ export const ROLES = {
     bgColor: "bg-slate-100",
     icon: "👑",
     description: "Accès complet à tous les modules",
-    pages: ["Dashboard", "Students", "Teachers", "Classes", "Subjects", "Staff", "Schedule", "Rooms", "Exams", "Grades", "Moyennes", "Homework", "Resources", "Attendance", "Sanctions", "Messages", "Events", "Visio", "Finance", "Bulletins", "SchoolYearManager", "PassageDeClasse", "MobileSaisie", "Pilotage", "ProjectsScrum", "SocialNetwork", "Affectation", "AffectationEleves", "Import", "OrgChart", "Tickets", "Cantine", "AbsencesEnseignants"],
+    pages: ["Dashboard", "Students", "Teachers", "Classes", "Subjects", "Staff", "Schedule", "Rooms", "Exams", "Grades", "Moyennes", "Homework", "Resources", "Attendance", "Sanctions", "Messages", "Events", "Visio", "Finance", "Bulletins", "SchoolYearManager", "PassageDeClasse", "MobileSaisie", "Pilotage", "ProjectsScrum", "SocialNetwork", "Affectation", "AffectationEleves", "Import", "OrgChart", "Tickets", "Cantine", "AbsencesEnseignants", "RHCollaborateurs", "RHConges", "RHTemps", "RHPaie"],
   },
   directeur_primaire: {
     label: "Directeur du Primaire",
@@ -79,7 +79,16 @@ export const ROLES = {
     bgColor: "bg-teal-100",
     icon: "💼",
     description: "Gestion RH et financière",
-    pages: ["Dashboard", "Staff", "Teachers", "Messages", "Finance", "Tickets"],
+    pages: ["Dashboard", "Staff", "Teachers", "Messages", "Finance", "Tickets", "RHCollaborateurs", "RHTemps", "RHPaie"],
+  },
+  rh_manager: {
+    label: "Responsable RH",
+    color: "from-purple-600 to-purple-800",
+    textColor: "text-purple-800",
+    bgColor: "bg-purple-100",
+    icon: "👥",
+    description: "Gestion des contrats, congés, temps de travail et paie",
+    pages: ["Dashboard", "Teachers", "Staff", "Schedule", "AbsencesEnseignants", "Messages", "Tickets", "RHCollaborateurs", "RHConges", "RHTemps", "RHPaie"],
   },
   eleve: {
     label: "Élève",
@@ -138,6 +147,10 @@ export const PAGE_LABELS = {
   Tickets: "Demandes Internes",
   Cantine: "Cantine Scolaire",
   AbsencesEnseignants: "Absences Enseignants",
+  RHCollaborateurs: "Collaborateurs RH",
+  RHConges: "Congés & Absences",
+  RHTemps: "Temps de Travail",
+  RHPaie: "Paie",
 };
 
 // All pages grouped by category (for the permissions matrix UI)
@@ -178,6 +191,16 @@ export const ALL_PAGES_BY_CATEGORY = [
       { key: "Visio", label: "Visioconférence" },
       { key: "Cantine", label: "Cantine Scolaire" },
       { key: "AbsencesEnseignants", label: "Absences Enseignants" },
+    ],
+  },
+  {
+    category: "Ressources Humaines",
+    icon: "👥",
+    pages: [
+      { key: "RHCollaborateurs", label: "Collaborateurs RH" },
+      { key: "RHConges",         label: "Congés & Absences" },
+      { key: "RHTemps",          label: "Temps de Travail" },
+      { key: "RHPaie",           label: "Paie" },
     ],
   },
   {

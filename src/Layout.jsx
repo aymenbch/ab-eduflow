@@ -7,6 +7,7 @@ import {
   School, UserCog, Clock, Bell, ChevronDown, LogOut, RefreshCw, UserCircle,
   DollarSign, ShieldCheck, BarChart2, CalendarDays, Smartphone,
   Star, TrendingUp, Network, DoorOpen, Video, Upload, GitBranch, Ticket, UtensilsCrossed, UserX,
+  Users2, CalendarOff, Timer, Wallet,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -58,6 +59,10 @@ const ALL_NAVIGATION = [
   { name: "Cantine Scolaire",       href: "Cantine",          icon: UtensilsCrossed },
   { name: "Absences Enseignants",   href: "AbsencesEnseignants", icon: UserX },
   { name: "Administration",         href: "Administration",   icon: ShieldCheck },
+  { name: "Collaborateurs RH",      href: "RHCollaborateurs", icon: Users2 },
+  { name: "Congés & Absences",      href: "RHConges",         icon: CalendarOff },
+  { name: "Temps de Travail",       href: "RHTemps",          icon: Timer },
+  { name: "Paie",                   href: "RHPaie",           icon: Wallet },
 ];
 
 // Regroupement des modules en catégories pour la sidebar
@@ -89,6 +94,10 @@ const NAV_CATEGORIES = [
   {
     label: "Pilotage",
     hrefs: ["Pilotage", "Moyennes", "ProjectsScrum", "OrgChart"],
+  },
+  {
+    label: "Ressources Humaines",
+    hrefs: ["RHCollaborateurs", "RHConges", "RHTemps", "RHPaie"],
   },
   {
     label: "Administration",

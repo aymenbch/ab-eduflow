@@ -90,6 +90,10 @@ import AICenter from './pages/AICenter';
 import Tickets from './pages/Tickets';
 import Cantine from './pages/Cantine';
 import AbsencesEnseignants from './pages/AbsencesEnseignants';
+import RHCollaborateurs from './pages/RHCollaborateurs';
+import RHConges from './pages/RHConges';
+import RHTemps from './pages/RHTemps';
+import RHPaie from './pages/RHPaie';
 import __Layout from './Layout.jsx';
 
 
@@ -137,6 +141,10 @@ export const PAGES = {
     "Tickets": Tickets,
     "Cantine": Cantine,
     "AbsencesEnseignants": AbsencesEnseignants,
+    "RHCollaborateurs": RHCollaborateurs,
+    "RHConges": RHConges,
+    "RHTemps": RHTemps,
+    "RHPaie": RHPaie,
 }
 
 export const pagesConfig = {

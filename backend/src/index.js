@@ -79,6 +79,7 @@ const ticketRoutes = require('./routes/tickets');
 const notificationRoutes = require('./routes/notifications');
 const cantineRoutes = require('./routes/cantine');
 const absenceRoutes = require('./routes/absences');
+const rhRoutes = require('./routes/rh');
 const { loadUser, requireAuth } = require('./authUtils');
 
 const app = express();
@@ -161,6 +162,7 @@ app.use('/api/tickets', ticketRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/cantine', cantineRoutes);
 app.use('/api/absences', absenceRoutes);
+app.use('/api/rh', rhRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));
