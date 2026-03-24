@@ -22,42 +22,45 @@ export function useCurrentMember() {
   // Fetch the linked Student record
   const { data: studentRecord } = useQuery({
     queryKey: ["my_student_by_id", memberId],
-    queryFn: () => base44.entities.Student.filter({ id: memberId }),
+    queryFn: () => base44.entities.Student.get(memberId),
     enabled: !!memberId && memberType === "Student",
-    select: (data) => data[0] || null,
   });
 
   // Fetch the linked Teacher record
   const { data: teacherRecord } = useQuery({
     queryKey: ["my_teacher_by_id", memberId],
-    queryFn: () => base44.entities.Teacher.filter({ id: memberId }),
+    queryFn: () => base44.entities.Teacher.get(memberId),
     enabled: !!memberId && memberType === "Teacher",
-    select: (data) => data[0] || null,
   });
 
-  // For parents: fetch their children (students linked by parent_email or by a parent AppUser member_id pointing to a Student)
-  // Convention: parent's member_id = first child's id OR we match by parent_email stored on Student
-  const { data: childrenByMember = [] } = useQuery({
-    queryKey: ["my_children_by_member", memberId],
+  // For parents: fetch children via StudentGuardian in a single query (links + student records)
+  const { data: childrenByGuardian = [] } = useQuery({
+    queryKey: ["my_children_by_guardian", memberId],
     queryFn: async () => {
       if (!memberId) return [];
-      // Try direct child link first
-      const direct = await base44.entities.Student.filter({ id: memberId });
-      if (direct.length > 0) return direct;
-      // Otherwise fetch by parent having same id
-      return [];
+      const links = await base44.entities.StudentGuardian.filter({ parent_id: memberId });
+      if (!links?.length) return [];
+      const results = await Promise.all(
+        links.map(g =>
+          base44.entities.Student.get(g.student_id)
+            .catch(() => null)
+        )
+      );
+      return results.filter(Boolean);
     },
-    enabled: !!memberId && isParent && memberType === "Student",
+    enabled: !!memberId && isParent,
   });
 
-  // Fallback: if parent has no member_id, use email from session login
+  // Also fetch by parent_email stored on Student (legacy — runs always to catch children not yet in StudentGuardian)
   const { data: childrenByEmail = [] } = useQuery({
     queryKey: ["my_children_by_email", session?.login],
     queryFn: () => base44.entities.Student.filter({ parent_email: session?.login }),
-    enabled: isParent && !!session?.login && !memberId,
+    enabled: isParent && !!session?.login,
   });
 
-  const myChildren = childrenByMember.length > 0 ? childrenByMember : childrenByEmail;
+  // Merge both sources, deduplicate by id
+  const myChildren = [...childrenByGuardian, ...childrenByEmail]
+    .filter((c, i, arr) => arr.findIndex(x => x.id === c.id) === i);
 
   return {
     session,

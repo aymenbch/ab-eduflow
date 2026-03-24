@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import PageHeader from "@/components/ui/PageHeader";
@@ -294,7 +294,7 @@ function InvoiceDetailDialog({ invoice, student, onClose, onPaymentAdded }) {
 export default function Finance() {
   const session = getSession();
   const qc = useQueryClient();
-  const [schoolYear, setSchoolYear] = useState(CURRENT_YEAR);
+  const [schoolYear, setSchoolYear] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -302,7 +302,7 @@ export default function Finance() {
 
   // Fee structure form
   const [feeFormOpen, setFeeFormOpen] = useState(false);
-  const [feeForm, setFeeForm] = useState({ name: "", fee_type: "scolarite", amount: "", frequency: "annual", school_year: CURRENT_YEAR, description: "" });
+  const [feeForm, setFeeForm] = useState({ name: "", fee_type: "scolarite", amount: "", frequency: "annual", school_year: "", description: "" });
   const [feeEditing, setFeeEditing] = useState(null);
 
   // Invoice form
@@ -316,6 +316,30 @@ export default function Finance() {
   // Litigation
   const [litigFormOpen, setLitigFormOpen] = useState(false);
   const [litigForm, setLitigForm] = useState({ student_id: "", type: "impayé", amount: "", description: "", status: "ouvert", opened_date: new Date().toISOString().split("T")[0] });
+
+  const { data: schoolYears = [] } = useQuery({
+    queryKey: ["schoolYears"],
+    queryFn: () => base44.entities.SchoolYear.list("-start_date"),
+    onSuccess: (data) => {
+      if (!schoolYear) {
+        const active = data.find(y => y.status === "active") || data[0];
+        if (active?.name) setSchoolYear(active.name);
+      }
+    },
+  });
+
+  // Derive active year label (runs after schoolYears loads)
+  const activeYearName = useMemo(() => {
+    const active = schoolYears.find(y => y.status === "active") || schoolYears[0];
+    return active?.name || CURRENT_YEAR;
+  }, [schoolYears]);
+
+  // Set default once schoolYears are loaded
+  React.useEffect(() => {
+    if (schoolYears.length > 0 && !schoolYear) {
+      setSchoolYear(activeYearName);
+    }
+  }, [schoolYears, schoolYear, activeYearName]);
 
   const { data: students = [] } = useQuery({ queryKey: ["students"], queryFn: () => base44.entities.Student.list() });
   const { data: litigations = [] } = useQuery({ queryKey: ["litigations"], queryFn: () => base44.entities.Litigation.list("-opened_date") });
@@ -429,7 +453,21 @@ export default function Finance() {
       {/* School year selector */}
       <div className="flex items-center gap-3 mb-6">
         <Label className="text-sm text-slate-600 whitespace-nowrap">Année scolaire :</Label>
-        <Input value={schoolYear} onChange={e => setSchoolYear(e.target.value)} className="w-32" placeholder="2024-2025" />
+        <Select value={schoolYear} onValueChange={v => { setSchoolYear(v); setInvPage(1); }}>
+          <SelectTrigger className="w-40">
+            <SelectValue placeholder="Sélectionner…" />
+          </SelectTrigger>
+          <SelectContent>
+            {schoolYears.map(y => (
+              <SelectItem key={y.id} value={y.name}>
+                {y.name}
+                {y.status === "active" && (
+                  <Badge className="ml-2 bg-emerald-100 text-emerald-700 text-[10px] px-1.5 py-0">En cours</Badge>
+                )}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <Tabs defaultValue="dashboard">
@@ -517,7 +555,7 @@ export default function Finance() {
         <TabsContent value="frais">
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm text-slate-600">{feeStructures.length} frais configurés pour {schoolYear}</p>
-            <Button size="sm" onClick={() => { setFeeEditing(null); setFeeForm({ name: "", fee_type: "scolarite", amount: "", frequency: "annual", school_year: schoolYear, description: "" }); setFeeFormOpen(true); }}>
+            <Button size="sm" onClick={() => { setFeeEditing(null); setFeeForm({ name: "", fee_type: "scolarite", amount: "", frequency: "annual", school_year: schoolYear || activeYearName, description: "" }); setFeeFormOpen(true); }}>
               <Plus className="w-4 h-4 mr-1" /> Nouveau frais
             </Button>
           </div>

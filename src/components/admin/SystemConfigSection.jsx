@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Settings, CheckCircle2, Upload, Trash2, Building2, Loader2, AlertCircle } from "lucide-react";
+import { Settings, CheckCircle2, Upload, Trash2, Building2, Loader2, AlertCircle, FileText, Stamp, PenLine, AlignLeft } from "lucide-react";
 import { EDUCATION_SYSTEMS, getEducationSystem, setEducationSystem } from "@/components/config/educationSystems";
 
 function getAuthHeaders() {
@@ -74,20 +74,23 @@ function removeBackground(file) {
 }
 
 function SchoolBrandingSection() {
-  const [schoolLogo, setSchoolLogo]   = useState(null);
-  const [schoolName, setSchoolName]   = useState("");
-  const [nameInput,  setNameInput]    = useState("");
-  const [saving,     setSaving]       = useState(false);
-  const [uploading,  setUploading]    = useState(false);
-  const [msg,        setMsg]          = useState({ type: "", text: "" });
+  const [schoolLogo,    setSchoolLogo]    = useState(null);
+  const [schoolName,    setSchoolName]    = useState("");
+  const [nameInput,     setNameInput]     = useState("");
+  const [addressInput,  setAddressInput]  = useState("");
+  const [schoolAddress, setSchoolAddress] = useState("");
+  const [saving,        setSaving]        = useState(false);
+  const [uploading,     setUploading]     = useState(false);
+  const [msg,           setMsg]           = useState({ type: "", text: "" });
   const fileRef = useRef(null);
 
   useEffect(() => {
     fetch("/api/functions/getSchoolSettings", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" })
       .then(r => r.json())
       .then(d => {
-        if (d.school_logo) setSchoolLogo(d.school_logo);
-        if (d.school_name) { setSchoolName(d.school_name); setNameInput(d.school_name); }
+        if (d.school_logo)    setSchoolLogo(d.school_logo);
+        if (d.school_name)    { setSchoolName(d.school_name);       setNameInput(d.school_name); }
+        if (d.school_address) { setSchoolAddress(d.school_address); setAddressInput(d.school_address); }
       })
       .catch(() => {});
   }, []);
@@ -144,12 +147,16 @@ function SchoolBrandingSection() {
     setSaving(true); setMsg({ type: "", text: "" });
     const res  = await fetch("/api/functions/updateSchoolSettings", {
       method: "POST", headers: getAuthHeaders(),
-      body: JSON.stringify({ school_name: nameInput.trim() }),
+      body: JSON.stringify({ school_name: nameInput.trim(), school_address: addressInput.trim() }),
     });
     const data = await res.json();
     setSaving(false);
     if (data.error) { setMsg({ type: "error", text: data.error }); }
-    else { setSchoolName(nameInput.trim()); setMsg({ type: "success", text: "Nom de l'établissement enregistré." }); }
+    else {
+      setSchoolName(nameInput.trim());
+      setSchoolAddress(addressInput.trim());
+      setMsg({ type: "success", text: "Informations de l'établissement enregistrées." });
+    }
   };
 
   return (
@@ -165,21 +172,35 @@ function SchoolBrandingSection() {
       </CardHeader>
       <CardContent className="space-y-6">
 
-        {/* Nom de l'établissement */}
-        <div>
-          <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-1.5">Nom de l'établissement</label>
-          <div className="flex gap-2">
+        {/* Nom + Adresse */}
+        <div className="space-y-3">
+          <div>
+            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-1.5">Nom de l'établissement</label>
             <input
               type="text"
               value={nameInput}
               onChange={e => setNameInput(e.target.value)}
               placeholder="Ex: Lycée Ibn Khaldoun"
-              className="flex-1 h-10 px-3 rounded-xl border border-slate-200 text-sm text-slate-800 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 bg-slate-50"
+              className="w-full h-10 px-3 rounded-xl border border-slate-200 text-sm text-slate-800 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 bg-slate-50"
             />
-            <Button onClick={handleSaveName} disabled={saving || nameInput.trim() === schoolName} size="sm" className="h-10 px-4">
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Enregistrer"}
-            </Button>
           </div>
+          <div>
+            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-1.5">Adresse / Ville</label>
+            <input
+              type="text"
+              value={addressInput}
+              onChange={e => setAddressInput(e.target.value)}
+              placeholder="Ex: 12 Rue de la République, Alger"
+              className="w-full h-10 px-3 rounded-xl border border-slate-200 text-sm text-slate-800 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 bg-slate-50"
+            />
+          </div>
+          <Button
+            onClick={handleSaveName}
+            disabled={saving || (nameInput.trim() === schoolName && addressInput.trim() === schoolAddress)}
+            size="sm" className="h-10 px-4"
+          >
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Enregistrer"}
+          </Button>
         </div>
 
         {/* Logo */}
@@ -227,6 +248,197 @@ function SchoolBrandingSection() {
   );
 }
 
+// ── Documents Settings Section ────────────────────────────────────────────────
+function DocumentsSettingsSection() {
+  const [stamp,       setStamp]       = useState(null);
+  const [signature,   setSignature]   = useState(null);
+  const [footerText,  setFooterText]  = useState("");
+  const [footerInput, setFooterInput] = useState("");
+  const [saving,      setSaving]      = useState(false);
+  const [uploadingStamp, setUploadingStamp] = useState(false);
+  const [uploadingSig,   setUploadingSig]   = useState(false);
+  const [msg,         setMsg]         = useState({ type: "", text: "" });
+  const stampRef  = useRef(null);
+  const sigRef    = useRef(null);
+
+  useEffect(() => {
+    fetch("/api/functions/getSchoolSettings", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" })
+      .then(r => r.json())
+      .then(d => {
+        if (d.school_stamp)         setStamp(d.school_stamp);
+        if (d.director_signature)   setSignature(d.director_signature);
+        if (d.doc_footer_text)      { setFooterText(d.doc_footer_text); setFooterInput(d.doc_footer_text); }
+      })
+      .catch(() => {});
+  }, []);
+
+  const uploadImage = async (file, field, setPreview, setUploading) => {
+    setUploading(true);
+    setMsg({ type: "", text: "Suppression de l'arrière-plan…" });
+    const processed = await removeBackground(file);
+    setMsg({ type: "", text: "" });
+
+    const formData = new FormData();
+    formData.append("file", processed);
+    try {
+      const headers = {};
+      const session = JSON.parse(localStorage.getItem("edugest_session") || "null");
+      if (session?.token) headers["X-Session-Token"] = session.token;
+      if (session?.id)    headers["X-User-Id"]       = session.id;
+
+      const res  = await fetch("/api/upload", { method: "POST", headers, body: formData });
+      const data = await res.json();
+      if (data.error) { setMsg({ type: "error", text: data.error }); setUploading(false); return; }
+
+      const save = await fetch("/api/functions/updateSchoolSettings", {
+        method: "POST", headers: getAuthHeaders(),
+        body: JSON.stringify({ [field]: data.file_url }),
+      });
+      const saved = await save.json();
+      if (saved.error) { setMsg({ type: "error", text: saved.error }); }
+      else { setPreview(data.file_url); setMsg({ type: "success", text: "Image mise à jour." }); }
+    } catch {
+      setMsg({ type: "error", text: "Erreur lors du téléversement." });
+    }
+    setUploading(false);
+  };
+
+  const removeImage = async (field, setPreview) => {
+    setSaving(true);
+    const res  = await fetch("/api/functions/updateSchoolSettings", {
+      method: "POST", headers: getAuthHeaders(),
+      body: JSON.stringify({ [field]: "" }),
+    });
+    const data = await res.json();
+    setSaving(false);
+    if (data.error) { setMsg({ type: "error", text: data.error }); }
+    else { setPreview(null); setMsg({ type: "success", text: "Image supprimée." }); }
+  };
+
+  const saveFooter = async () => {
+    setSaving(true);
+    const res  = await fetch("/api/functions/updateSchoolSettings", {
+      method: "POST", headers: getAuthHeaders(),
+      body: JSON.stringify({ doc_footer_text: footerInput.trim() }),
+    });
+    const data = await res.json();
+    setSaving(false);
+    if (data.error) { setMsg({ type: "error", text: data.error }); }
+    else { setFooterText(footerInput.trim()); setMsg({ type: "success", text: "Pied de page enregistré." }); }
+  };
+
+  const ImageUploadRow = ({ label, icon: Icon, preview, setPreview, field, fileRef: ref, uploading, setUploading, tip }) => (
+    <div>
+      <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1.5 mb-2">
+        <Icon className="w-3.5 h-3.5" /> {label}
+      </label>
+      <p className="text-xs text-slate-400 mb-2">{tip}</p>
+      <div className="flex items-start gap-4">
+        <div className="w-28 h-20 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden flex-shrink-0">
+          {preview
+            ? <img src={preview} alt={label} className="w-full h-full object-contain p-2" onError={() => setPreview(null)} />
+            : <Icon className="w-8 h-8 text-slate-300" />}
+        </div>
+        <div className="flex flex-col gap-2 pt-1">
+          <input ref={ref} type="file" accept="image/*" className="hidden"
+            onChange={e => { const f = e.target.files?.[0]; if (f) uploadImage(f, field, setPreview, setUploading); e.target.value = ""; }} />
+          <Button variant="outline" size="sm" onClick={() => ref.current?.click()} disabled={uploading} className="gap-2">
+            {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+            {uploading ? "Téléversement…" : "Choisir une image"}
+          </Button>
+          {preview && (
+            <Button variant="ghost" size="sm" onClick={() => removeImage(field, setPreview)} disabled={saving}
+              className="gap-2 text-red-500 hover:text-red-600 hover:bg-red-50">
+              <Trash2 className="w-4 h-4" /> Supprimer
+            </Button>
+          )}
+          <p className="text-[11px] text-slate-400">PNG, JPG · fond auto-retiré</p>
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <Card className="mb-8 border-2 border-violet-100">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <FileText className="w-5 h-5 text-violet-600" />
+          Paramètres des documents exportés
+        </CardTitle>
+        <p className="text-sm text-slate-500">
+          Cachet, signature du directeur et pied de page apparaissent sur les attestations et relevés PDF.
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-6">
+
+        <ImageUploadRow
+          label="Cachet de l'établissement"
+          icon={Stamp}
+          preview={stamp}
+          setPreview={setStamp}
+          field="school_stamp"
+          fileRef={stampRef}
+          uploading={uploadingStamp}
+          setUploading={setUploadingStamp}
+          tip="Image ronde du cachet officiel. L'arrière-plan sera automatiquement supprimé."
+        />
+
+        <div className="border-t border-slate-100" />
+
+        <ImageUploadRow
+          label="Signature du directeur"
+          icon={PenLine}
+          preview={signature}
+          setPreview={setSignature}
+          field="director_signature"
+          fileRef={sigRef}
+          uploading={uploadingSig}
+          setUploading={setUploadingSig}
+          tip="Signature manuscrite scannée. L'arrière-plan blanc sera automatiquement supprimé."
+        />
+
+        <div className="border-t border-slate-100" />
+
+        {/* Footer text */}
+        <div>
+          <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1.5 mb-1.5">
+            <AlignLeft className="w-3.5 h-3.5" /> Pied de page personnalisé
+          </label>
+          <p className="text-xs text-slate-400 mb-2">
+            Ce texte apparaît en bas de chaque document PDF exporté (après la date de génération).
+          </p>
+          <div className="flex gap-2">
+            <textarea
+              value={footerInput}
+              onChange={e => setFooterInput(e.target.value)}
+              placeholder="Ex: Document délivré par la Direction — Tél : 023 XX XX XX — contact@etablissement.dz"
+              rows={2}
+              className="flex-1 px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-800 focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 bg-slate-50 resize-none"
+            />
+            <Button onClick={saveFooter} disabled={saving || footerInput.trim() === footerText} size="sm" className="h-10 px-4 self-start">
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Enregistrer"}
+            </Button>
+          </div>
+        </div>
+
+        {/* Message */}
+        {msg.text && (
+          <div className={`flex items-center gap-2 text-sm p-3 rounded-lg border ${
+            msg.type === "error"
+              ? "text-red-600 bg-red-50 border-red-200"
+              : "text-green-700 bg-green-50 border-green-200"
+          }`}>
+            {msg.type === "error"
+              ? <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              : <CheckCircle2 className="w-4 h-4 flex-shrink-0" />}
+            {msg.text}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function SystemConfigSection() {
   const [selected, setSelected] = useState(getEducationSystem());
 
@@ -238,6 +450,7 @@ export default function SystemConfigSection() {
   return (
     <>
     <SchoolBrandingSection />
+    <DocumentsSettingsSection />
     <Card className="mb-8 border-2 border-blue-100">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-lg">

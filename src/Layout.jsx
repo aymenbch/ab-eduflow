@@ -7,7 +7,7 @@ import {
   School, UserCog, Clock, Bell, ChevronDown, LogOut, RefreshCw, UserCircle,
   DollarSign, ShieldCheck, BarChart2, CalendarDays, Smartphone,
   Star, TrendingUp, Network, DoorOpen, Video, Upload, GitBranch, Ticket, UtensilsCrossed, UserX,
-  Users2, CalendarOff, Timer, Wallet,
+  Users2, CalendarOff, Timer, Wallet, UserPlus, Settings,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -58,6 +58,9 @@ const ALL_NAVIGATION = [
   { name: "Demandes Internes",      href: "Tickets",          icon: Ticket },
   { name: "Cantine Scolaire",       href: "Cantine",          icon: UtensilsCrossed },
   { name: "Absences Enseignants",   href: "AbsencesEnseignants", icon: UserX },
+  { name: "Inscriptions & Onboarding", href: "Inscription",  icon: UserPlus },
+  { name: "Mes Documents",           href: "Documents",        icon: FileText },
+  { name: "Grille Tarifaire",        href: "Tarifs",          icon: Settings },
   { name: "Administration",         href: "Administration",   icon: ShieldCheck },
   { name: "Collaborateurs RH",      href: "RHCollaborateurs", icon: Users2 },
   { name: "Congés & Absences",      href: "RHConges",         icon: CalendarOff },
@@ -73,7 +76,7 @@ const NAV_CATEGORIES = [
   },
   {
     label: "Élèves",
-    hrefs: ["Students", "Classes", "AffectationEleves", "PassageDeClasse", "StudentDashboard"],
+    hrefs: ["Students", "Classes", "AffectationEleves", "PassageDeClasse", "StudentDashboard", "Inscription"],
   },
   {
     label: "Équipe pédagogique",
@@ -88,6 +91,10 @@ const NAV_CATEGORIES = [
     hrefs: ["Attendance", "Sanctions", "Cantine"],
   },
   {
+    label: "Documents",
+    hrefs: ["Documents"],
+  },
+  {
     label: "Communication",
     hrefs: ["Messages", "Events", "Visio", "SocialNetwork", "EspaceParent"],
   },
@@ -100,8 +107,12 @@ const NAV_CATEGORIES = [
     hrefs: ["RHCollaborateurs", "RHConges", "RHTemps", "RHPaie"],
   },
   {
+    label: "Finance & Scolarité",
+    hrefs: ["Finance", "Tarifs"],
+  },
+  {
     label: "Administration",
-    hrefs: ["Finance", "SchoolYearManager", "Import", "Affectation", "Tickets", "Administration"],
+    hrefs: ["SchoolYearManager", "Import", "Affectation", "Tickets", "Administration"],
   },
 ];
 

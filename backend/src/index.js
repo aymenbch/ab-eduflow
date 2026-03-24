@@ -71,7 +71,7 @@ async function runMigrations() {
   }
 }
 
-const entityRoutes = require('./routes/entities');
+const { router: entityRoutes } = require('./routes/entities');
 const functionRoutes = require('./routes/functions');
 const importRoutes = require('./routes/import');
 const aiRoutes = require('./routes/ai');
@@ -80,7 +80,9 @@ const notificationRoutes = require('./routes/notifications');
 const cantineRoutes = require('./routes/cantine');
 const absenceRoutes = require('./routes/absences');
 const rhRoutes = require('./routes/rh');
+const inscriptionRoutes = require('./routes/inscription');
 const financeV2Routes = require('./routes/financeV2');
+const tarifsRoutes = require('./routes/tarifs');
 const { loadUser, requireAuth } = require('./authUtils');
 
 const app = express();
@@ -165,6 +167,8 @@ app.use('/api/cantine', cantineRoutes);
 app.use('/api/absences', absenceRoutes);
 app.use('/api/rh', rhRoutes);
 app.use('/api/finv2', financeV2Routes);
+app.use('/api/inscription', inscriptionRoutes);
+app.use('/api/tarifs', tarifsRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));
@@ -194,3 +198,5 @@ app.listen(PORT, () => {
   console.log(`   Functions    : http://localhost:${PORT}/api/functions/{fnName}`);
   console.log(`   Uploads      : http://localhost:${PORT}/uploads/\n`);
 });
+
+

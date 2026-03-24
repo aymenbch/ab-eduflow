@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import PageHeader from "@/components/ui/PageHeader";
@@ -27,7 +27,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreVertical, Pencil, Trash2, Calendar, Loader2, Upload } from "lucide-react";
+import { MoreVertical, Pencil, Trash2, Calendar, Loader2, CheckCircle2, Circle } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -42,6 +42,22 @@ import { format, isPast, isToday } from "date-fns";
 import { useTeacherProfile } from "@/components/teachers/useTeacherProfile";
 import { useCurrentMember } from "@/components/hooks/useCurrentMember";
 import { fr } from "date-fns/locale";
+
+// ── Parent homework completion status (persisted in localStorage) ──────────────
+function getCompletionKey(childId, hwId) {
+  return `hw_done_${childId}_${hwId}`;
+}
+function isHomeworkDone(childId, hwId) {
+  return localStorage.getItem(getCompletionKey(childId, hwId)) === "1";
+}
+function toggleHomeworkDone(childId, hwId) {
+  const key = getCompletionKey(childId, hwId);
+  if (localStorage.getItem(key) === "1") {
+    localStorage.removeItem(key);
+  } else {
+    localStorage.setItem(key, "1");
+  }
+}
 
 export default function Homework() {
   const [formOpen, setFormOpen] = useState(false);
@@ -63,15 +79,29 @@ export default function Homework() {
 
   const queryClient = useQueryClient();
   const { mySubjectIds, isTeacherRole } = useTeacherProfile();
-  const { isStudent, myStudent, isTeacher, myTeacherId } = useCurrentMember();
+  const { isStudent, myStudent, isTeacher, myTeacherId, isParent, myChildren } = useCurrentMember();
+
+  // Force re-render when parent toggles a completion (localStorage change)
+  const [completionTick, setCompletionTick] = useState(0);
+  const handleToggleDone = useCallback((childId, hwId) => {
+    toggleHomeworkDone(childId, hwId);
+    setCompletionTick(t => t + 1);
+  }, []);
 
   const { data: homeworkAll = [], isLoading } = useQuery({
     queryKey: ["homework"],
     queryFn: () => base44.entities.Homework.list("-due_date"),
   });
 
+  const parentChildClassIds = useMemo(
+    () => new Set(myChildren.map(c => c.class_id).filter(Boolean)),
+    [myChildren]
+  );
+
   const homework = isStudent && myStudent
     ? homeworkAll.filter(h => h.class_id === myStudent.class_id)
+    : isParent
+    ? homeworkAll.filter(h => parentChildClassIds.has(h.class_id))
     : isTeacherRole && mySubjectIds.length > 0
     ? homeworkAll.filter(h => mySubjectIds.includes(h.subject_id))
     : homeworkAll;
@@ -107,8 +137,8 @@ export default function Homework() {
     ? subjects.filter(s => mySubjectIds.includes(s.id))
     : subjects;
 
-  // Élève : lecture seule (pas de bouton d'ajout)
-  const canEdit = !isStudent;
+  // Élève et parent : lecture seule (pas de bouton d'ajout)
+  const canEdit = !isStudent && !isParent;
 
   const handleNew = () => {
     setSelectedHomework(null);
@@ -220,8 +250,16 @@ export default function Homework() {
             const cls = classMap[hw.class_id];
             const dueDateStatus = getDueDateStatus(hw.due_date);
 
+            // For parent view: find which child this homework belongs to + done status
+            const linkedChild = isParent
+              ? myChildren.find(c => c.class_id === hw.class_id) || null
+              : null;
+            const isDone = isParent && linkedChild
+              ? isHomeworkDone(linkedChild.id, hw.id)
+              : false;
+
             return (
-              <Card key={hw.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+              <Card key={hw.id} className={`overflow-hidden hover:shadow-lg transition-shadow ${isParent && isDone ? "opacity-70" : ""}`}>
                 <div
                   className="h-1.5"
                   style={{ backgroundColor: subject?.color || "#3B82F6" }}
@@ -229,44 +267,64 @@ export default function Homework() {
                 <CardContent className="p-5">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
-                      <h3 className="font-semibold text-lg line-clamp-1">{hw.title}</h3>
+                      <h3 className={`font-semibold text-lg line-clamp-1 ${isParent && isDone ? "line-through text-slate-400" : ""}`}>
+                        {hw.title}
+                      </h3>
                       <div className="flex items-center gap-2 mt-1">
                         <Badge
                           variant="outline"
-                          style={{
-                            borderColor: subject?.color,
-                            color: subject?.color,
-                          }}
+                          style={{ borderColor: subject?.color, color: subject?.color }}
                         >
                           {subject?.name || "..."}
                         </Badge>
                         <Badge variant="secondary">{cls?.name}</Badge>
+                        {isParent && linkedChild && (
+                          <Badge variant="outline" className="text-xs text-indigo-600 border-indigo-200">
+                            {linkedChild.first_name}
+                          </Badge>
+                        )}
                       </div>
                     </div>
+
+                    {/* Parent: Fait/Pas fait toggle */}
+                    {isParent && linkedChild && (
+                      <button
+                        onClick={() => handleToggleDone(linkedChild.id, hw.id)}
+                        className="flex items-center gap-1.5 text-sm font-medium px-2 py-1 rounded-lg transition-colors"
+                        title={isDone ? "Marquer comme non fait" : "Marquer comme fait"}
+                      >
+                        {isDone
+                          ? <><CheckCircle2 className="w-5 h-5 text-green-500" /><span className="text-green-600">Fait</span></>
+                          : <><Circle className="w-5 h-5 text-slate-300" /><span className="text-slate-400">Pas fait</span></>
+                        }
+                      </button>
+                    )}
+
+                    {/* Staff/teacher: edit menu */}
                     {canEdit && (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreVertical className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleEdit(hw)}>
-                          <Pencil className="w-4 h-4 mr-2" />
-                          Modifier
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="text-red-600"
-                          onClick={() => {
-                            setHomeworkToDelete(hw);
-                            setDeleteDialogOpen(true);
-                          }}
-                        >
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Supprimer
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreVertical className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleEdit(hw)}>
+                            <Pencil className="w-4 h-4 mr-2" />
+                            Modifier
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-red-600"
+                            onClick={() => {
+                              setHomeworkToDelete(hw);
+                              setDeleteDialogOpen(true);
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Supprimer
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     )}
                   </div>
 
@@ -292,10 +350,18 @@ export default function Homework() {
                           ? format(new Date(hw.due_date), "d MMM yyyy", { locale: fr })
                           : "Non définie"}
                       </span>
+                      {dueDateStatus === "overdue" && !isDone && (
+                        <span className="text-xs bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full">En retard</span>
+                      )}
+                      {dueDateStatus === "today" && !isDone && (
+                        <span className="text-xs bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded-full">Aujourd'hui !</span>
+                      )}
                     </div>
-                    <Badge className={priorityColors[hw.priority]}>
-                      {priorityLabels[hw.priority]}
-                    </Badge>
+                    {!isParent && (
+                      <Badge className={priorityColors[hw.priority]}>
+                        {priorityLabels[hw.priority]}
+                      </Badge>
+                    )}
                   </div>
 
                   {hw.file_url && (
@@ -318,9 +384,11 @@ export default function Homework() {
       {homework.length === 0 && !isLoading && (
         <div className="text-center py-12">
           <p className="text-slate-500">Aucun devoir assigné</p>
-          <Button className="mt-4" onClick={handleNew}>
-            Créer un devoir
-          </Button>
+          {canEdit && (
+            <Button className="mt-4" onClick={handleNew}>
+              Créer un devoir
+            </Button>
+          )}
         </div>
       )}
 

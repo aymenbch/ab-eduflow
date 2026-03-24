@@ -320,7 +320,7 @@ router.post('/verify2FALogin', async (req, res) => {
 router.post('/getSchoolSettings', async (req, res) => {
   const prisma = getPrisma();
   try {
-    const rows = await prisma.$queryRaw`SELECT key, value FROM AppSettings WHERE key IN ('school_logo', 'school_name')`;
+    const rows = await prisma.$queryRaw`SELECT key, value FROM AppSettings WHERE key IN ('school_logo', 'school_name', 'school_address', 'school_stamp', 'director_signature', 'doc_footer_text', 'currency', 'currency_symbol')`;
     const settings = {};
     for (const r of rows) settings[r.key] = r.value;
     res.json(settings);
@@ -449,14 +449,20 @@ router.post('/disableAdminSecurity', requireRole('admin_systeme'), async (req, r
 // POST /api/functions/updateSchoolSettings — admin only
 router.post('/updateSchoolSettings', requireRole('admin_systeme', 'admin'), async (req, res) => {
   const prisma = getPrisma();
-  const { school_logo, school_name } = req.body;
+  const { school_logo, school_name, school_address, school_stamp, director_signature, doc_footer_text, currency, currency_symbol } = req.body;
   try {
-    if (school_logo !== undefined) {
-      await prisma.$executeRaw`INSERT INTO AppSettings (key, value) VALUES ('school_logo', ${school_logo}) ON CONFLICT(key) DO UPDATE SET value = excluded.value`;
-    }
-    if (school_name !== undefined) {
-      await prisma.$executeRaw`INSERT INTO AppSettings (key, value) VALUES ('school_name', ${school_name}) ON CONFLICT(key) DO UPDATE SET value = excluded.value`;
-    }
+    const upsert = async (key, val) => {
+      if (val === undefined) return;
+      await prisma.$executeRaw`INSERT INTO AppSettings (key, value) VALUES (${key}, ${val}) ON CONFLICT(key) DO UPDATE SET value = excluded.value`;
+    };
+    await upsert('school_logo',          school_logo);
+    await upsert('school_name',          school_name);
+    await upsert('school_address',       school_address);
+    await upsert('school_stamp',         school_stamp);
+    await upsert('director_signature',   director_signature);
+    await upsert('doc_footer_text',      doc_footer_text);
+    await upsert('currency',             currency);
+    await upsert('currency_symbol',      currency_symbol);
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: err.message });

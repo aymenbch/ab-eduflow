@@ -638,8 +638,12 @@ router.get('/:entity/:id', async (req, res) => {
   if (!model) return res.status(404).json({ error: 'Unknown entity' });
 
   try {
-    let where = { id: req.params.id };
-    where = await applyAccessFilter(entityName, where, req.user, req.educationSystem);
+    // Apply access filter on an empty where, then AND with the specific id
+    let accessWhere = {};
+    accessWhere = await applyAccessFilter(entityName, accessWhere, req.user, req.educationSystem);
+    const where = Object.keys(accessWhere).length > 0
+      ? { AND: [{ id: req.params.id }, accessWhere] }
+      : { id: req.params.id };
     const item = await model.findFirst({ where });
     if (!item) return res.status(403).json({ error: 'Accès refusé ou enregistrement introuvable' });
     res.json(parseJsonFields(item));
@@ -1106,4 +1110,4 @@ router.delete('/:entity/:id', async (req, res) => {
   }
 });
 
-module.exports = router;
+module.exports = { router, autoCreateAppUser, autoCreateParentUser, generateStudentCode, sha256 };
